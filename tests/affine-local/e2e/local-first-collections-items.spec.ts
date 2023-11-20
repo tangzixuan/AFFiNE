@@ -1,14 +1,12 @@
 import { test } from '@affine-test/kit/playwright';
-import {
-  checkDatePicker,
-  selectDateFromDatePicker,
-} from '@affine-test/kit/utils/filter';
 import { openHomePage } from '@affine-test/kit/utils/load-page';
 import {
+  clickNewPageButton,
   getBlockSuiteEditorTitle,
-  newPage,
-  waitEditorLoad,
+  waitForEditorLoad,
 } from '@affine-test/kit/utils/page-logic';
+import { clickSideBarCurrentWorkspaceBanner } from '@affine-test/kit/utils/sidebar';
+import { createLocalWorkspace } from '@affine-test/kit/utils/workspace';
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
@@ -16,30 +14,35 @@ const createAndPinCollection = async (
   page: Page,
   options?: {
     collectionName?: string;
+    skipInitialPage?: boolean;
   }
 ) => {
-  await openHomePage(page);
-  await waitEditorLoad(page);
-  await newPage(page);
+  if (!options?.skipInitialPage) {
+    await openHomePage(page);
+    await waitForEditorLoad(page);
+  }
+  await clickNewPageButton(page);
   await getBlockSuiteEditorTitle(page).click();
   await getBlockSuiteEditorTitle(page).fill('test page');
   await page.getByTestId('all-pages').click();
-  const cell = page.getByRole('cell', {
-    name: 'test page',
-  });
+  const cell = page.getByTestId('page-list-item-title').getByText('test page');
   await expect(cell).toBeVisible();
-  await page.getByTestId('create-first-filter').click();
+  await page.getByTestId('create-first-filter').click({
+    delay: 200,
+  });
   await page
     .getByTestId('variable-select')
-    .locator('button', { hasText: 'Created' })
-    .click();
-  await page.getByTestId('save-as-collection').click();
+    .getByTestId(`filler-tag-Created`)
+    .click({
+      delay: 200,
+    });
+  await page.getByTestId('save-as-collection').click({
+    delay: 200,
+  });
   const title = page.getByTestId('input-collection-title');
   await title.isVisible();
   await title.fill(options?.collectionName ?? 'test collection');
   await page.getByTestId('save-collection').click();
-  await page.waitForTimeout(100);
-  await page.getByTestId('collection-bar-option-pin').click();
   await page.waitForTimeout(100);
 };
 
@@ -51,14 +54,17 @@ test('Show collections items in sidebar', async ({ page }) => {
   const first = items.first();
   expect(await first.textContent()).toBe('test collection');
   await first.getByTestId('fav-collapsed-button').click();
-  const collectionPage = collections.getByTestId('collection-page').nth(1);
+  const collectionPage = collections.getByTestId('collection-page').nth(0);
   expect(await collectionPage.textContent()).toBe('test page');
+  await collectionPage.hover();
   await collectionPage.getByTestId('collection-page-options').click();
   const deletePage = page
     .getByTestId('collection-page-option')
     .getByText('Delete');
   await deletePage.click();
-  expect(await collections.getByTestId('collection-page').count()).toBe(1);
+  await page.getByTestId('confirm-delete-page').click();
+  expect(await collections.getByTestId('collection-page').count()).toBe(0);
+  await first.hover();
   await first.getByTestId('collection-options').click();
   const deleteCollection = page
     .getByTestId('collection-option')
@@ -66,31 +72,20 @@ test('Show collections items in sidebar', async ({ page }) => {
   await deleteCollection.click();
   await page.waitForTimeout(50);
   expect(await items.count()).toBe(0);
-});
-
-test('pin and unpin collection', async ({ page }) => {
-  const name = 'asd';
-  await createAndPinCollection(page, { collectionName: name });
-  const collections = page.getByTestId('collections');
-  const items = collections.getByTestId('collection-item');
-  await page.waitForTimeout(50);
-  expect(await items.count()).toBe(1);
-  const first = items.first();
-  await first.getByTestId('collection-options').click();
-  const deleteCollection = page
-    .getByTestId('collection-option')
-    .getByText('Unpin');
-  await deleteCollection.click();
-  await page.waitForTimeout(50);
-  expect(await items.count()).toBe(0);
-  await page.getByTestId('collection-select').click();
-  const option = page.locator('[data-testid=collection-select-option]', {
-    hasText: name,
+  await createAndPinCollection(page, {
+    skipInitialPage: true,
   });
-  await option.hover();
-  await option.getByTestId('collection-select-option-pin').click();
-  await page.waitForTimeout(100);
   expect(await items.count()).toBe(1);
+  await createLocalWorkspace(
+    {
+      name: 'Test 1',
+    },
+    page
+  );
+  await waitForEditorLoad(page);
+  expect(await items.count()).toBe(0);
+  await clickSideBarCurrentWorkspaceBanner(page);
+  await page.getByTestId('workspace-card').nth(0).click();
 });
 
 test('edit collection', async ({ page }) => {
@@ -99,10 +94,11 @@ test('edit collection', async ({ page }) => {
   const items = collections.getByTestId('collection-item');
   expect(await items.count()).toBe(1);
   const first = items.first();
+  await first.hover();
   await first.getByTestId('collection-options').click();
   const editCollection = page
     .getByTestId('collection-option')
-    .getByText('Edit Filter');
+    .getByText('Rename');
   await editCollection.click();
   const title = page.getByTestId('input-collection-title');
   await title.fill('123');
@@ -117,17 +113,14 @@ test('edit collection and change filter date', async ({ page }) => {
   const items = collections.getByTestId('collection-item');
   expect(await items.count()).toBe(1);
   const first = items.first();
+  await first.hover();
   await first.getByTestId('collection-options').click();
   const editCollection = page
     .getByTestId('collection-option')
-    .getByText('Edit Filter');
+    .getByText('Rename');
   await editCollection.click();
   const title = page.getByTestId('input-collection-title');
   await title.fill('123');
-  const today = new Date();
-  await page.locator('[data-testid="filter-arg"]').locator('input').click();
-  await selectDateFromDatePicker(page, today);
-  await checkDatePicker(page, today);
   await page.getByTestId('save-collection').click();
   await page.waitForTimeout(100);
   expect(await first.textContent()).toBe('123');
@@ -135,8 +128,8 @@ test('edit collection and change filter date', async ({ page }) => {
 
 test('create temporary filter by click tag', async ({ page }) => {
   await openHomePage(page);
-  await waitEditorLoad(page);
-  await newPage(page);
+  await waitForEditorLoad(page);
+  await clickNewPageButton(page);
   await getBlockSuiteEditorTitle(page).click();
   await getBlockSuiteEditorTitle(page).fill('test page');
   await page.locator('affine-page-meta-data').click();
@@ -145,26 +138,25 @@ test('create temporary filter by click tag', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.keyboard.press('Escape');
   await page.locator('.tag', { hasText: 'TODO Tag' }).click();
-  const cell = page.getByRole('cell', {
-    name: 'test page',
-  });
+  const cell = page.getByTestId('page-list-item-title').getByText('test page');
   await expect(cell).toBeVisible();
-  expect(await page.getByTestId('title').count()).toBe(1);
+  expect(await page.getByTestId('page-list-item').count()).toBe(1);
   await page.getByTestId('filter-arg').click();
-  await page.getByRole('tooltip').getByText('TODO Tag').click();
-  expect(await page.getByTestId('title').count()).toBe(2);
+
+  await page.getByTestId('multi-select-TODO Tag').click();
+  expect(
+    await page.getByTestId('page-list-item').count()
+  ).toBeGreaterThanOrEqual(2);
 });
 
 test('add collection from sidebar', async ({ page }) => {
   await openHomePage(page);
-  await waitEditorLoad(page);
-  await newPage(page);
+  await waitForEditorLoad(page);
+  await clickNewPageButton(page);
   await getBlockSuiteEditorTitle(page).click();
   await getBlockSuiteEditorTitle(page).fill('test page');
   await page.getByTestId('all-pages').click();
-  const cell = page.getByRole('cell', {
-    name: 'test page',
-  });
+  const cell = page.getByTestId('page-list-item-title').getByText('test page');
   await expect(cell).toBeVisible();
   const nullCollection = page.getByTestId(
     'slider-bar-collection-null-description'

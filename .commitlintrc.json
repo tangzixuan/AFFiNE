@@ -17,15 +17,16 @@
         "cli",
         "hooks",
         "i18n",
-        "jotai",
         "native",
         "templates",
         "y-indexeddb",
+        "y-provider",
         "debug",
         "storage",
         "infra",
         "plugin-cli",
-        "sdk"
+        "sdk",
+        "plugin"
       ]
     ]
   }
