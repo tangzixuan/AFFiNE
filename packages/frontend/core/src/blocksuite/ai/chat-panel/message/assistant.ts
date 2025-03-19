@@ -1,6 +1,3 @@
-import '../content/assistant-avatar';
-import '../content/rich-text';
-
 import { WithDisposable } from '@blocksuite/affine/global/lit';
 import { isInsidePageEditor } from '@blocksuite/affine/shared/utils';
 import type { EditorHost } from '@blocksuite/affine/std';
@@ -69,10 +66,6 @@ export class ChatMessageAssistant extends WithDisposable(ShadowlessElement) {
 
   renderContent() {
     const { host, item, isLast, status, error } = this;
-
-    if (isLast && status === 'loading') {
-      return html`<ai-loading></ai-loading>`;
-    }
 
     const state = isLast
       ? status !== 'loading' && status !== 'transmitting'
@@ -143,6 +136,10 @@ export class ChatMessageAssistant extends WithDisposable(ShadowlessElement) {
   }
 
   protected override render() {
+    if (this.status === 'loading') {
+      return html`<ai-generating></ai-generating>`;
+    }
+
     return html`
       ${this.renderHeader()}
       <div class="item-wrapper">${this.renderContent()}</div>

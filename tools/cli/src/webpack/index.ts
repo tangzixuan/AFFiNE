@@ -238,6 +238,10 @@ export function createWebpackConfig(
               type: 'asset/inline',
             },
             {
+              test: /\.riv$/,
+              type: 'asset/resource',
+            },
+            {
               test: /\.css$/,
               use: [
                 flags.mode === 'development'
