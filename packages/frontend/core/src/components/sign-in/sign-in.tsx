@@ -165,6 +165,7 @@ export const SignInStep = ({
         <OAuth redirectUrl={state.redirectUrl} />
 
         <AuthInput
+          className={style.authInput}
           label={t['com.affine.settings.email']()}
           placeholder={t['com.affine.auth.sign.email.placeholder']()}
           onChange={setEmail}
@@ -176,6 +177,7 @@ export const SignInStep = ({
         />
 
         <Button
+          className={style.signInButton}
           style={{ width: '100%' }}
           size="extraLarge"
           data-testid="continue-login-button"
