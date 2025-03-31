@@ -4,9 +4,17 @@ import {
   GfxControllerIdentifier,
   type Viewport,
 } from '@blocksuite/std/gfx';
+import type { BlockModel } from '@blocksuite/store';
 
 import { BlockLayoutHandlersIdentifier } from './layout/block-layout-provider';
-import type { BlockLayout, RenderingState, ViewportLayout } from './types';
+import type {
+  BaseBlockLayout,
+  BlockLayout,
+  BlockLayoutTreeNode,
+  RenderingState,
+  ViewportLayout,
+  ViewportLayoutTree,
+} from './types';
 
 export function syncCanvasSize(canvas: HTMLCanvasElement, host: HTMLElement) {
   const hostRect = host.getBoundingClientRect();
@@ -85,6 +93,116 @@ export function getViewportLayout(
     },
   };
   return layout;
+}
+
+export function getViewportLayoutTree(
+  host: EditorHost,
+  viewport: Viewport
+): ViewportLayoutTree {
+  const zoom = viewport.zoom;
+
+  let layoutMinX = Infinity;
+  let layoutMinY = Infinity;
+  let layoutMaxX = -Infinity;
+  let layoutMaxY = -Infinity;
+
+  const gfx = host.std.get(GfxControllerIdentifier);
+  const store = host.std.store;
+  const rootModel = store.root;
+
+  if (!rootModel) {
+    return {
+      roots: [],
+      overallRect: {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+      },
+    };
+  }
+
+  const providers = host.std.provider.getAll(BlockLayoutHandlersIdentifier);
+  const providersArray = Array.from(providers.values());
+
+  // Recursive function to build the tree structure
+  const buildLayoutTreeNode = (
+    model: BlockModel
+  ): BlockLayoutTreeNode | null => {
+    const component = gfx.view.get(model.id) as GfxBlockComponent;
+    if (!component) return null;
+
+    // Find appropriate layout handler for this block type
+    const handler = providersArray.find(p => p.blockType === model.flavour);
+    if (!handler) return null;
+
+    // Get layout for this block
+    const layout = handler.queryLayout(component);
+    if (!layout) return null;
+
+    // Calculate bounds for this layout
+    const { rect } = handler.calculateBound(layout);
+
+    // Update overall bounding box
+    layoutMinX = Math.min(layoutMinX, rect.x);
+    layoutMinY = Math.min(layoutMinY, rect.y);
+    layoutMaxX = Math.max(layoutMaxX, rect.x + rect.w);
+    layoutMaxY = Math.max(layoutMaxY, rect.y + rect.h);
+
+    // Process children
+    const children: BlockLayoutTreeNode[] = [];
+    for (const childModel of model.children) {
+      const childNode = buildLayoutTreeNode(childModel);
+      if (childNode) {
+        children.push(childNode);
+      }
+    }
+
+    // Create node for this block
+    const baseLayout: BaseBlockLayout = {
+      blockId: model.id,
+      type: model.flavour,
+      role: model.role,
+      rect: rect,
+    };
+
+    return {
+      blockId: model.id,
+      type: model.flavour,
+      role: model.role,
+      layout: baseLayout,
+      children,
+    };
+  };
+
+  // Start building tree from root
+  const roots: BlockLayoutTreeNode[] = [];
+  const rootNode = buildLayoutTreeNode(rootModel);
+  if (rootNode) {
+    roots.push(rootNode);
+  }
+
+  // If no valid layouts were found, use default values
+  if (layoutMinX === Infinity) {
+    layoutMinX = 0;
+    layoutMinY = 0;
+    layoutMaxX = 0;
+    layoutMaxY = 0;
+  }
+
+  // Calculate overall rectangle
+  const w = (layoutMaxX - layoutMinX) / zoom / viewport.viewScale;
+  const h = (layoutMaxY - layoutMinY) / zoom / viewport.viewScale;
+
+  return {
+    roots,
+    overallRect: {
+      x: layoutMinX,
+      y: layoutMinY,
+      w: Math.max(w, 0),
+      h: Math.max(h, 0),
+    },
+  };
 }
 
 export function debugLog(message: string, state: RenderingState) {

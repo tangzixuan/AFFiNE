@@ -89,3 +89,28 @@ export interface TurboRendererConfig {
 }
 
 export type HostToWorkerMessage = MessagePaint;
+
+export interface BaseBlockLayout {
+  blockId: string;
+  type: string;
+  role: string;
+  rect: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+}
+
+export interface BlockLayoutTreeNode {
+  blockId: string;
+  type: string;
+  role: string;
+  layout: BaseBlockLayout;
+  children: BlockLayoutTreeNode[];
+}
+
+export interface ViewportLayoutTree {
+  roots: BlockLayoutTreeNode[];
+  overallRect: BaseBlockLayout['rect'];
+}

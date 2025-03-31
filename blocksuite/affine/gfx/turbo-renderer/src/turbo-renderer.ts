@@ -20,6 +20,7 @@ import { debounceTime } from 'rxjs/operators';
 import {
   debugLog,
   getViewportLayout,
+  getViewportLayoutTree,
   paintPlaceholder,
   syncCanvasSize,
 } from './renderer-utils';
@@ -173,6 +174,8 @@ export class ViewportTurboRendererExtension extends GfxExtension {
   get layoutCache() {
     if (this.layoutCacheData) return this.layoutCacheData;
     const layout = getViewportLayout(this.std.host, this.viewport);
+    const layoutTree = getViewportLayoutTree(this.std.host, this.viewport);
+    console.log(layoutTree);
     this.debugLog('Layout cache updated');
     return (this.layoutCacheData = layout);
   }
