@@ -5,7 +5,7 @@ import { ModuleRef, REQUEST } from '@nestjs/core';
 import type { Request } from 'express';
 import { nanoid } from 'nanoid';
 
-import { GraphqlContext } from '../graphql';
+import type { GraphqlContext } from '../graphql';
 import { retryable } from '../utils/promise';
 import { Locker } from './locker';
 

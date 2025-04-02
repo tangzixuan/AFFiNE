@@ -21,7 +21,7 @@
     "init": "yarn prisma migrate dev && yarn data-migration run",
     "seed": "r ./src/seed/index.ts",
     "genconfig": "r ./scripts/genconfig.ts",
-    "predeploy": "yarn prisma migrate deploy && node --import ./scripts/register.js ./dist/data/index.js run",
+    "predeploy": "yarn prisma migrate deploy && node --import @oxc-node/core/register ./dist/data/index.js run",
     "postinstall": "prisma generate"
   },
   "dependencies": {
