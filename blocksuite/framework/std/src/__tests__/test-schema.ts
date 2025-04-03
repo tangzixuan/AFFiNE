@@ -3,6 +3,10 @@ import {
   BlockSchemaExtension,
   defineBlockSchema,
 } from '@blocksuite/store';
+import * as Y from 'yjs';
+
+import { SurfaceBlockModel as BaseSurfaceModel } from '../gfx/index.js';
+import { TestShapeElement } from './test-gfx-element.js';
 
 export const RootBlockSchema = defineBlockSchema({
   flavour: 'test:page',
@@ -15,7 +19,7 @@ export const RootBlockSchema = defineBlockSchema({
   metadata: {
     version: 2,
     role: 'root',
-    children: ['test:note'],
+    children: ['test:note', 'test:surface'],
   },
 });
 
@@ -61,3 +65,28 @@ export const HeadingBlockSchemaExtension =
 export class HeadingBlockModel extends BlockModel<
   ReturnType<(typeof HeadingBlockSchema)['model']['props']>
 > {}
+
+export const SurfaceBlockSchema = defineBlockSchema({
+  flavour: 'test:surface',
+  props: internal => ({
+    elements: internal.Boxed<Y.Map<Y.Map<unknown>>>(new Y.Map()),
+  }),
+  metadata: {
+    version: 1,
+    role: 'surface',
+    parent: ['test:page'],
+  },
+  toModel: () => new SurfaceBlockModel(),
+});
+
+export const SurfaceBlockSchemaExtension =
+  BlockSchemaExtension(SurfaceBlockSchema);
+
+export class SurfaceBlockModel extends BaseSurfaceModel {
+  override _init() {
+    this._extendElement({
+      testShape: TestShapeElement,
+    });
+    super._init();
+  }
+}
