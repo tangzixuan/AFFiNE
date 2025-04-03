@@ -1,6 +1,11 @@
 import type { SerializedXYWH } from '@blocksuite/global/gfx';
 
-import { field, GfxPrimitiveElementModel } from '../gfx/index.js';
+import {
+  convert,
+  derive,
+  field,
+  GfxPrimitiveElementModel,
+} from '../gfx/index.js';
 
 export class TestShapeElement extends GfxPrimitiveElementModel {
   get type() {
@@ -11,5 +16,25 @@ export class TestShapeElement extends GfxPrimitiveElementModel {
   accessor rotate: number = 0;
 
   @field()
-  accessor xywh: SerializedXYWH = '[0, 0, 10, 10]';
+  accessor xywh: SerializedXYWH = '[0,0,10,10]';
+
+  @convert(val => {
+    console.log(val);
+    if (['rect', 'triangle'].includes(val)) {
+      return val;
+    }
+
+    return 'rect';
+  })
+  @derive(val => {
+    if (val === 'triangle') {
+      return {
+        rotate: 0,
+      };
+    }
+
+    return {};
+  })
+  @field()
+  accessor shapeType: 'rect' | 'triangle' = 'rect';
 }
