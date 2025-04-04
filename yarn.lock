@@ -424,7 +424,7 @@ __metadata:
     "@types/lodash-es": "npm:^4.17.12"
     "@vanilla-extract/css": "npm:^1.17.0"
     "@vanilla-extract/dynamic": "npm:^2.1.2"
-    animejs: "npm:^3.2.2"
+    animejs: "npm:^4.0.0"
     bytes: "npm:^3.1.2"
     clsx: "npm:^2.1.1"
     cmdk: "npm:^1.0.4"
@@ -16349,10 +16349,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"animejs@npm:^3.2.2":
-  version: 3.2.2
-  resolution: "animejs@npm:3.2.2"
-  checksum: 10/7abdb56f415c666ba02f4e64fdbb10d457fed7e3711b0f006f97e48e5650097013397d890e8ceb31e9e06b73bf6dfd9202309d0dae0fc0b5190aa7c4e0ab7054
+"animejs@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "animejs@npm:4.0.0"
+  checksum: 10/2d9e67b4de9d2ba3d44c2e00900d9baae5ee6a7dbb01b2b78b93bdbf1da0656bf8ad88c22607248889495faad52caaac2f0ae0436a5d5b7828f45200a9f48064
   languageName: node
   linkType: hard
 
