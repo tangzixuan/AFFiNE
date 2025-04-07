@@ -3,6 +3,7 @@ import { EdgelessLegacySlotIdentifier } from '@blocksuite/affine-block-surface';
 import { TableSelection } from '@blocksuite/affine-block-table';
 import {
   darkToolbarStyles,
+  type EditorMenuButton,
   EditorToolbar,
   lightToolbarStyles,
 } from '@blocksuite/affine-components/toolbar';
@@ -631,7 +632,13 @@ export class AffineToolbarWidget extends WidgetComponent {
 
         // Hides toolbar
         if (Flag.None === value || flags.check(Flag.Hiding, value)) {
-          if (toolbar.dataset.open) delete toolbar.dataset.open;
+          if (toolbar.dataset.open) {
+            delete toolbar.dataset.open;
+            // Closes dropdown menus
+            Array.from(
+              toolbar.querySelectorAll<EditorMenuButton>('editor-menu-button')
+            ).forEach(button => button.hide());
+          }
           return;
         }
 

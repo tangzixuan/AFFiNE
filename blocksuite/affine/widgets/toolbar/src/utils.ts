@@ -1,4 +1,5 @@
 import {
+  type EditorMenuButton,
   type EditorToolbar,
   renderToolbarSeparator,
 } from '@blocksuite/affine-components/toolbar';
@@ -129,6 +130,10 @@ export function autoUpdatePosition(
       if (toolbar.dataset.open) {
         if (middlewareData.hide.referenceHidden) {
           delete toolbar.dataset.open;
+          // Closes dropdown menus
+          Array.from(
+            toolbar.querySelectorAll<EditorMenuButton>('editor-menu-button')
+          ).forEach(button => button.hide());
         }
       } else {
         toolbar.dataset.open = 'true';

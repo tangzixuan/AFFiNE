@@ -319,3 +319,37 @@ test('should focus on input of popover on toolbar', async ({ page }) => {
   const cornersValue = await cornersInput.inputValue();
   expect(cornersValue).toBe('36');
 });
+
+test('Dropdown menus should be closed automatically when toolbar is displayed', async ({
+  page,
+}) => {
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('/frame');
+  await page.keyboard.press('Enter');
+
+  const toolbar = locateToolbar(page);
+
+  const surfaceRef = page.locator('affine-surface-ref');
+  await surfaceRef.hover();
+
+  await expect(toolbar).toBeVisible();
+
+  const moreMenuContainer = toolbar.getByLabel('More menu');
+  const moreMenuButton = moreMenuContainer.getByLabel('More');
+  const moreMenu = moreMenuContainer.getByRole('menu');
+
+  await expect(moreMenu).toBeHidden();
+
+  await moreMenuButton.click();
+
+  await expect(moreMenu).toBeVisible();
+
+  await page.mouse.move(0, 0);
+
+  await expect(toolbar).toBeHidden();
+
+  await surfaceRef.hover();
+
+  await expect(toolbar).toBeVisible();
+  await expect(moreMenu).toBeHidden();
+});
