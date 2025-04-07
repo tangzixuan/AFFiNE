@@ -473,7 +473,7 @@ function setupMediaListeners() {
 
 // will be called when the app is ready or when the user has enabled the recording feature in settings
 export function setupRecordingFeature() {
-  if (!MeetingsSettingsState.value.enabled || !checkRecordingAvailable()) {
+  if (!MeetingsSettingsState.value.enabled || !checkCanRecordMeeting()) {
     return;
   }
 
@@ -767,9 +767,24 @@ export const checkRecordingAvailable = () => {
   return (version.major === 14 && version.minor >= 2) || version.major > 14;
 };
 
-export const checkScreenRecordingPermission = () => {
+export const checkMeetingPermissions = () => {
   if (!isMacOS()) {
-    return false;
+    return undefined;
   }
-  return systemPreferences.getMediaAccessStatus('screen') === 'granted';
+  const mediaTypes = ['screen', 'microphone'] as const;
+  return Object.fromEntries(
+    mediaTypes.map(mediaType => [
+      mediaType,
+      systemPreferences.getMediaAccessStatus(mediaType) === 'granted',
+    ])
+  ) as Record<(typeof mediaTypes)[number], boolean>;
+};
+
+export const checkCanRecordMeeting = () => {
+  const features = checkMeetingPermissions();
+  return (
+    checkRecordingAvailable() &&
+    features &&
+    Object.values(features).every(feature => feature)
+  );
 };

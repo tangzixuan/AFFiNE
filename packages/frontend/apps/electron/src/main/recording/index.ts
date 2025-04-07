@@ -9,8 +9,8 @@ import { shell } from 'electron';
 import { isMacOS } from '../../shared/utils';
 import type { NamespaceHandlers } from '../type';
 import {
+  checkMeetingPermissions,
   checkRecordingAvailable,
-  checkScreenRecordingPermission,
   disableRecordingFeature,
   getRawAudioBuffers,
   getRecording,
@@ -73,13 +73,17 @@ export const recordingHandlers = {
   disableRecordingFeature: async () => {
     return disableRecordingFeature();
   },
-  checkScreenRecordingPermission: async () => {
-    return checkScreenRecordingPermission();
+  checkMeetingPermissions: async () => {
+    return checkMeetingPermissions();
   },
-  showScreenRecordingPermissionSetting: async () => {
+  showRecordingPermissionSetting: async (_, type: 'screen' | 'microphone') => {
+    const urlMap = {
+      screen: 'Privacy_ScreenCapture',
+      microphone: 'Privacy_Microphone',
+    };
     if (isMacOS()) {
       return shell.openExternal(
-        'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
+        `x-apple.systempreferences:com.apple.preference.security?${urlMap[type]}`
       );
     }
     // this only available on MacOS

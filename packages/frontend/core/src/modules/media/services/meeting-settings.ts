@@ -103,13 +103,15 @@ export class MeetingSettingsService extends Service {
     return this.desktopApiService?.handler.recording.checkRecordingAvailable();
   }
 
-  async checkScreenRecordingPermission() {
-    return this.desktopApiService?.handler.recording.checkScreenRecordingPermission();
+  async checkMeetingPermissions() {
+    return this.desktopApiService?.handler.recording.checkMeetingPermissions();
   }
 
   // the following methods are only available on MacOS right?
-  async showScreenRecordingPermissionSetting() {
-    return this.desktopApiService?.handler.recording.showScreenRecordingPermissionSetting();
+  async showRecordingPermissionSetting(type: 'screen' | 'microphone') {
+    return this.desktopApiService?.handler.recording.showRecordingPermissionSetting(
+      type
+    );
   }
 
   setRecordingMode = (mode: MeetingSettingsSchema['recordingMode']) => {

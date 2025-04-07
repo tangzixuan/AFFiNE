@@ -5412,6 +5412,18 @@ export function useAFFiNEI18N(): {
       */
     ["com.affine.settings.meetings.privacy.screen-system-audio-recording.permission-setting"](): string;
     /**
+      * `Microphone`
+      */
+    ["com.affine.settings.meetings.privacy.microphone"](): string;
+    /**
+      * `The Meeting feature requires permission to be used.`
+      */
+    ["com.affine.settings.meetings.privacy.microphone.description"](): string;
+    /**
+      * `Click to allow`
+      */
+    ["com.affine.settings.meetings.privacy.microphone.permission-setting"](): string;
+    /**
       * `Do nothing`
       */
     ["com.affine.settings.meetings.record.recording-mode.none"](): string;

@@ -15,8 +15,8 @@ import { beforeAppQuit } from '../cleanup';
 import { logger } from '../logger';
 import {
   appGroups$,
+  checkCanRecordMeeting,
   checkRecordingAvailable,
-  checkScreenRecordingPermission,
   MeetingsSettingsState,
   recordingStatus$,
   startRecording,
@@ -89,7 +89,7 @@ class TrayState implements Disposable {
   // tray's icon
   icon: NativeImage = nativeImage
     .createFromPath(icons.tray)
-    .resize({ width: 16, height: 16 });
+    .resize({ width: 18, height: 18 });
 
   // tray's tooltip
   tooltip: string = 'AFFiNE';
@@ -142,10 +142,17 @@ class TrayState implements Disposable {
 
     const getConfig = () => {
       const items: TrayMenuConfig = [];
-      if (
-        checkScreenRecordingPermission() &&
-        MeetingsSettingsState.value.enabled
-      ) {
+      if (!MeetingsSettingsState.value.enabled) {
+        items.push({
+          label: 'Meetings are disabled',
+          disabled: true,
+        });
+      } else if (!checkCanRecordMeeting()) {
+        items.push({
+          label: 'Required permissions not granted',
+          disabled: true,
+        });
+      } else {
         const appGroups = appGroups$.value;
         const runningAppGroups = appGroups.filter(
           appGroup => appGroup.isRunning

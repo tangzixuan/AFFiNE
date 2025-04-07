@@ -75,6 +75,61 @@ const RecordingModeMenu = () => {
   );
 };
 
+// Add the PermissionSettingRow component
+interface PermissionSettingRowProps {
+  nameKey: string;
+  descriptionKey: string;
+  permissionSettingKey: string;
+  hasPermission: boolean;
+  onOpenPermissionSetting: () => void | Promise<void>;
+}
+
+const PermissionSettingRow = ({
+  nameKey,
+  descriptionKey,
+  permissionSettingKey,
+  hasPermission,
+  onOpenPermissionSetting,
+}: PermissionSettingRowProps) => {
+  const t = useI18n();
+
+  const handleClick = () => {
+    const result = onOpenPermissionSetting();
+    if (result instanceof Promise) {
+      result.catch(error => {
+        console.error('Error opening permission setting:', error);
+      });
+    }
+  };
+
+  return (
+    <SettingRow
+      name={t[nameKey]()}
+      desc={
+        <>
+          {t[descriptionKey]()}
+          {!hasPermission && (
+            <span onClick={handleClick} className={styles.permissionSetting}>
+              {t[permissionSettingKey]()}
+            </span>
+          )}
+        </>
+      }
+    >
+      <IconButton
+        icon={
+          hasPermission ? (
+            <DoneIcon />
+          ) : (
+            <InformationFillDuotoneIcon className={styles.noPermissionIcon} />
+          )
+        }
+        onClick={handleClick}
+      />
+    </SettingRow>
+  );
+};
+
 export const MeetingsSettings = () => {
   const t = useI18n();
   const meetingSettingsService = useService(MeetingSettingsService);
@@ -82,8 +137,10 @@ export const MeetingsSettings = () => {
   const [recordingFeatureAvailable, setRecordingFeatureAvailable] =
     useState(false);
 
-  const [screenRecordingPermission, setScreenRecordingPermission] =
-    useState(false);
+  const [permissions, setPermissions] = useState<{
+    screen: boolean;
+    microphone: boolean;
+  }>();
 
   const confirmModal = useConfirmModal();
 
@@ -97,9 +154,9 @@ export const MeetingsSettings = () => {
         setRecordingFeatureAvailable(false);
       });
     meetingSettingsService
-      .checkScreenRecordingPermission()
+      .checkMeetingPermissions()
       .then(permission => {
-        setScreenRecordingPermission(permission ?? false);
+        setPermissions(permission);
       })
       .catch(err => console.log(err));
   }, [meetingSettingsService]);
@@ -121,7 +178,9 @@ export const MeetingsSettings = () => {
               'com.affine.settings.meetings.record.permission-modal.description'
             ](),
           onConfirm: async () => {
-            await meetingSettingsService.showScreenRecordingPermissionSetting();
+            await meetingSettingsService.showRecordingPermissionSetting(
+              'screen'
+            );
           },
           cancelText: t['com.affine.recording.dismiss'](),
           confirmButtonOptions: {
@@ -146,7 +205,12 @@ export const MeetingsSettings = () => {
 
   const handleOpenScreenRecordingPermissionSetting =
     useAsyncCallback(async () => {
-      await meetingSettingsService.showScreenRecordingPermissionSetting();
+      await meetingSettingsService.showRecordingPermissionSetting('screen');
+    }, [meetingSettingsService]);
+
+  const handleOpenMicrophoneRecordingPermissionSetting =
+    useAsyncCallback(async () => {
+      await meetingSettingsService.showRecordingPermissionSetting('microphone');
     }, [meetingSettingsService]);
 
   const handleOpenSavedRecordings = useAsyncCallback(async () => {
@@ -230,41 +294,24 @@ export const MeetingsSettings = () => {
           <SettingWrapper
             title={t['com.affine.settings.meetings.privacy.header']()}
           >
-            <SettingRow
-              name={t[
-                'com.affine.settings.meetings.privacy.screen-system-audio-recording'
-              ]()}
-              desc={
-                <>
-                  {t[
-                    'com.affine.settings.meetings.privacy.screen-system-audio-recording.description'
-                  ]()}
-                  {!screenRecordingPermission && (
-                    <span
-                      onClick={handleOpenScreenRecordingPermissionSetting}
-                      className={styles.permissionSetting}
-                    >
-                      {t[
-                        'com.affine.settings.meetings.privacy.screen-system-audio-recording.permission-setting'
-                      ]()}
-                    </span>
-                  )}
-                </>
+            <PermissionSettingRow
+              nameKey="com.affine.settings.meetings.privacy.screen-system-audio-recording"
+              descriptionKey="com.affine.settings.meetings.privacy.screen-system-audio-recording.description"
+              permissionSettingKey="com.affine.settings.meetings.privacy.screen-system-audio-recording.permission-setting"
+              hasPermission={permissions?.screen || false}
+              onOpenPermissionSetting={
+                handleOpenScreenRecordingPermissionSetting
               }
-            >
-              <IconButton
-                icon={
-                  screenRecordingPermission ? (
-                    <DoneIcon />
-                  ) : (
-                    <InformationFillDuotoneIcon
-                      className={styles.noPermissionIcon}
-                    />
-                  )
-                }
-                onClick={handleOpenScreenRecordingPermissionSetting}
-              />
-            </SettingRow>
+            />
+            <PermissionSettingRow
+              nameKey="com.affine.settings.meetings.privacy.microphone"
+              descriptionKey="com.affine.settings.meetings.privacy.microphone.description"
+              permissionSettingKey="com.affine.settings.meetings.privacy.microphone.permission-setting"
+              hasPermission={permissions?.microphone || false}
+              onOpenPermissionSetting={
+                handleOpenMicrophoneRecordingPermissionSetting
+              }
+            />
           </SettingWrapper>
         </>
       )}
