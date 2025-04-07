@@ -4,6 +4,7 @@ import { app, net, protocol, session } from 'electron';
 import cookieParser from 'set-cookie-parser';
 
 import { resourcesPath } from '../shared/utils';
+import { anotherHost, mainHost } from './constants';
 import { logger } from './logger';
 
 protocol.registerSchemesAsPrivileged([
@@ -42,6 +43,10 @@ function isNetworkResource(pathname: string) {
 
 async function handleFileRequest(request: Request) {
   const urlObject = new URL(request.url);
+
+  if (urlObject.host === anotherHost) {
+    urlObject.host = mainHost;
+  }
 
   const isAbsolutePath = urlObject.host !== '.';
 
