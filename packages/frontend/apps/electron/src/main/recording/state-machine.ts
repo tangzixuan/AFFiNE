@@ -141,7 +141,8 @@ export class RecordingStateMachine {
 
     if (
       appGroup &&
-      currentStatus?.appGroup?.processGroupId === appGroup.processGroupId
+      currentStatus?.appGroup?.processGroupId === appGroup.processGroupId &&
+      currentStatus.status === 'new'
     ) {
       return {
         ...currentStatus,
