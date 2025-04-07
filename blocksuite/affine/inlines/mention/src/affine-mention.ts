@@ -29,6 +29,7 @@ export class AffineMention extends SignalWatcher(
       line-height: 24px; /* 160% */
       padding: 0 4px;
       border-radius: 4px;
+      user-select: none;
     }
     .affine-mention:hover {
       background: var(--affine-hover-color);
