@@ -222,6 +222,7 @@ export function getCursorMode(edgelessTool: GfxToolsFullOptionValue | null) {
     case 'shape':
     case 'connector':
     case 'frame':
+    case 'affine:note':
       return 'crosshair';
     case 'text':
       return 'text';
