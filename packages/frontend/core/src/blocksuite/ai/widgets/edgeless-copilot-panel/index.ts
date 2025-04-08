@@ -1,8 +1,11 @@
 import { WithDisposable } from '@blocksuite/affine/global/lit';
+import { ThemeProvider } from '@blocksuite/affine/shared/services';
 import { scrollbarStyle } from '@blocksuite/affine/shared/styles';
+import { unsafeCSSVar } from '@blocksuite/affine/shared/theme';
 import { on, stopPropagation } from '@blocksuite/affine/shared/utils';
 import type { EditorHost } from '@blocksuite/affine/std';
-import { css, html, LitElement, nothing } from 'lit';
+import { darkCssVariables, lightCssVariables } from '@toeverything/theme';
+import { css, html, LitElement, nothing, unsafeCSS } from 'lit';
 import { property } from 'lit/decorators.js';
 
 import type { AIItemGroupConfig } from '../../components/ai-item/types';
@@ -20,15 +23,43 @@ export class EdgelessCopilotPanel extends WithDisposable(LitElement) {
       min-width: 330px;
       max-height: 374px;
       overflow-y: auto;
-      background: var(--affine-background-overlay-panel-color);
-      box-shadow: var(--affine-shadow-2);
+      background: ${unsafeCSSVar('--affine-background-overlay-panel-color')};
+      box-shadow: ${unsafeCSSVar('--affine-overlay-shadow')};
       border-radius: 8px;
       z-index: var(--affine-z-index-popover);
+    }
+
+    .edgeless-copilot-panel[data-app-theme='light'] {
+      background: ${unsafeCSS(
+        lightCssVariables['--affine-background-overlay-panel-color']
+      )};
+
+      box-shadow: ${unsafeCSS(lightCssVariables['--affine-overlay-shadow'])};
+    }
+
+    .edgeless-copilot-panel[data-app-theme='dark'] {
+      background: ${unsafeCSS(
+        darkCssVariables['--affine-background-overlay-panel-color']
+      )};
+
+      box-shadow: ${unsafeCSS(darkCssVariables['--affine-overlay-shadow'])};
+    }
+
+    .edgeless-copilot-panel[data-app-theme='dark'] ai-item {
+      background: blue;
     }
 
     ${scrollbarStyle('.edgeless-copilot-panel')}
     .edgeless-copilot-panel:hover::-webkit-scrollbar-thumb {
       background-color: var(--affine-black-30);
+    }
+
+    .edgeless-copilot-panel[data-app-theme='light']:hover::-webkit-scrollbar-thumb {
+      background-color: ${unsafeCSS(lightCssVariables['--affine-black30'])};
+    }
+
+    .edgeless-copilot-panel[data-app-theme='dark']:hover::-webkit-scrollbar-thumb {
+      background-color: ${unsafeCSS(darkCssVariables['--affine-black30'])};
     }
   `;
 
@@ -40,6 +71,11 @@ export class EdgelessCopilotPanel extends WithDisposable(LitElement) {
     super.connectedCallback();
     this._disposables.add(on(this, 'wheel', stopPropagation));
     this._disposables.add(on(this, 'pointerdown', stopPropagation));
+    this.disposables.add(
+      this.host.std.get(ThemeProvider).app$.subscribe(() => {
+        this.requestUpdate();
+      })
+    );
   }
 
   hide() {
@@ -47,6 +83,7 @@ export class EdgelessCopilotPanel extends WithDisposable(LitElement) {
   }
 
   override render() {
+    const appTheme = this.host.std.get(ThemeProvider).app$.value;
     const chain = this._getChain();
     const groups = this.groups.reduce((pre, group) => {
       const filtered = group.items.filter(item =>
@@ -61,8 +98,9 @@ export class EdgelessCopilotPanel extends WithDisposable(LitElement) {
     if (groups.every(group => group.items.length === 0)) return nothing;
 
     return html`
-      <div class="edgeless-copilot-panel">
+      <div class="edgeless-copilot-panel" data-app-theme=${appTheme}>
         <ai-item-list
+          .theme=${appTheme}
           .onClick=${() => {
             this.onClick?.();
           }}

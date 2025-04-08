@@ -35,7 +35,11 @@ const isMuslFromFilesystem = () => {
 }
 
 const isMuslFromReport = () => {
-  const report = typeof process.report.getReport === 'function' ? process.report.getReport() : null
+  let report = null
+  if (typeof process.report?.getReport === 'function') {
+    process.report.excludeNetwork = true
+    report = process.report.getReport()
+  }
   if (!report) {
     return null
   }
@@ -376,16 +380,12 @@ module.exports.ApplicationStateChangedSubscriber = nativeBinding.ApplicationStat
 module.exports.AudioTapStream = nativeBinding.AudioTapStream
 module.exports.DocStorage = nativeBinding.DocStorage
 module.exports.DocStoragePool = nativeBinding.DocStoragePool
-module.exports.Mp3Encoder = nativeBinding.Mp3Encoder
 module.exports.RecordingPermissions = nativeBinding.RecordingPermissions
 module.exports.ShareableContent = nativeBinding.ShareableContent
 module.exports.SqliteConnection = nativeBinding.SqliteConnection
 module.exports.TappableApplication = nativeBinding.TappableApplication
-module.exports.Bitrate = nativeBinding.Bitrate
 module.exports.decodeAudio = nativeBinding.decodeAudio
 module.exports.decodeAudioSync = nativeBinding.decodeAudioSync
 module.exports.mintChallengeResponse = nativeBinding.mintChallengeResponse
-module.exports.Mode = nativeBinding.Mode
-module.exports.Quality = nativeBinding.Quality
 module.exports.ValidationResult = nativeBinding.ValidationResult
 module.exports.verifyChallengeResponse = nativeBinding.verifyChallengeResponse

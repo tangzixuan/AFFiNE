@@ -1,6 +1,6 @@
 {
   "name": "@affine/ios",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "AFFiNE Desktop Web application",
   "type": "module",
   "private": true,

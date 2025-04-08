@@ -5,8 +5,6 @@ import path from 'node:path';
 import {
   type Application,
   type AudioTapStream,
-  Bitrate,
-  Mp3Encoder,
   ShareableContent,
   type TappableApplication,
 } from '@affine/native';
@@ -19,6 +17,7 @@ import { debounce } from 'lodash-es';
 import multer from 'multer';
 import { Server } from 'socket.io';
 
+import { createWavBuffer } from './encode';
 import { gemini, type TranscriptionResult } from './gemini';
 
 // Constants
@@ -206,36 +205,34 @@ async function saveRecording(recording: Recording): Promise<string | null> {
     const recordingDir = path.join(RECORDING_DIR, sanitizedFilename);
     await fs.ensureDir(recordingDir);
 
-    const mp3Filename = path.join(recordingDir, 'recording.mp3');
-    const transcriptionMp3Filename = path.join(
+    const wavFilename = path.join(recordingDir, 'recording.wav');
+    const transcriptionWavFilename = path.join(
       recordingDir,
-      'transcription.mp3'
+      'transcription.wav'
     );
     const metadataFilename = path.join(recordingDir, 'metadata.json');
     const iconFilename = path.join(recordingDir, 'icon.png');
 
-    // Save MP3 file with the actual sample rate from the stream
-    console.log(`📝 Writing MP3 file to ${mp3Filename}`);
-    const mp3Encoder = new Mp3Encoder({
-      channels: channelCount,
-      sampleRate: actualSampleRate,
-    });
-    const mp3Data = mp3Encoder.encode(buffer);
-    await fs.writeFile(mp3Filename, mp3Data);
-    console.log('✅ MP3 file written successfully');
-
-    // Save low-quality MP3 file for transcription (8kHz)
-    console.log(
-      `📝 Writing transcription MP3 file to ${transcriptionMp3Filename}`
+    console.log(`📝 Muxing Wav buffer ${wavFilename}`);
+    const wavBuffer = new Uint8Array(
+      createWavBuffer(buffer, {
+        sampleRate: actualSampleRate,
+        numChannels: channelCount,
+      })
     );
-    const transcriptionMp3Encoder = new Mp3Encoder({
-      channels: channelCount,
-      bitrate: Bitrate.Kbps8,
-      sampleRate: actualSampleRate,
-    });
-    const transcriptionMp3Data = transcriptionMp3Encoder.encode(buffer);
-    await fs.writeFile(transcriptionMp3Filename, transcriptionMp3Data);
-    console.log('✅ Transcription MP3 file written successfully');
+
+    // Save Wav file with the actual sample rate from the stream
+    console.log(`📝 Writing Wav file to ${wavFilename}`);
+    await fs.writeFile(wavFilename, wavBuffer);
+    console.log('✅ Wav file written successfully');
+
+    // Save low-quality Wav file for transcription (8kHz)
+    console.log(
+      `📝 Writing transcription wav file to ${transcriptionWavFilename}`
+    );
+
+    await fs.writeFile(transcriptionWavFilename, wavBuffer);
+    console.log('✅ Transcription Wav file written successfully');
 
     // Save app icon if available
     if (app?.icon) {
@@ -367,7 +364,7 @@ async function stopRecording(processId: number) {
 // File management
 async function getRecordings(): Promise<
   {
-    mp3: string;
+    wav: string;
     metadata?: RecordingMetadata;
     transcription?: TranscriptionMetadata;
   }[]
@@ -411,7 +408,7 @@ async function getRecordings(): Promise<
             if (transcriptionExists) {
               transcription = await fs.readJson(transcriptionPath);
             } else {
-              // If transcription.mp3 exists but no transcription.json, it means transcription is available but not started
+              // If transcription.Wav exists but no transcription.json, it means transcription is available but not started
               transcription = {
                 transcriptionStartTime: 0,
                 transcriptionEndTime: 0,
@@ -423,7 +420,7 @@ async function getRecordings(): Promise<
           }
 
           return {
-            mp3: dir,
+            wav: dir,
             metadata,
             transcription,
           };
@@ -473,21 +470,21 @@ async function setupRecordingsWatcher() {
     // Handle file events
     fsWatcher
       .on('add', async path => {
-        if (path.endsWith('.mp3') || path.endsWith('.json')) {
+        if (path.endsWith('.wav') || path.endsWith('.json')) {
           console.log(`📝 File added: ${path}`);
           const files = await getRecordings();
           io.emit('apps:saved', { recordings: files });
         }
       })
       .on('change', async path => {
-        if (path.endsWith('.mp3') || path.endsWith('.json')) {
+        if (path.endsWith('.wav') || path.endsWith('.json')) {
           console.log(`📝 File changed: ${path}`);
           const files = await getRecordings();
           io.emit('apps:saved', { recordings: files });
         }
       })
       .on('unlink', async path => {
-        if (path.endsWith('.mp3') || path.endsWith('.json')) {
+        if (path.endsWith('.wav') || path.endsWith('.json')) {
           console.log(`🗑️ File removed: ${path}`);
           const files = await getRecordings();
           io.emit('apps:saved', { recordings: files });
@@ -797,11 +794,11 @@ app.post(
       // Check if directory exists
       await fs.access(recordingDir);
 
-      const transcriptionMp3Path = `${recordingDir}/transcription.mp3`;
+      const transcriptionWavPath = `${recordingDir}/transcription.wav`;
       const transcriptionMetadataPath = `${recordingDir}/transcription.json`;
 
       // Check if transcription file exists
-      await fs.access(transcriptionMp3Path);
+      await fs.access(transcriptionWavPath);
 
       // Create initial transcription metadata
       const initialMetadata: TranscriptionMetadata = {
@@ -814,7 +811,7 @@ app.post(
       // Notify clients that transcription has started
       io.emit('apps:recording-transcription-start', { filename: foldername });
 
-      const transcription = await gemini(transcriptionMp3Path, {
+      const transcription = await gemini(transcriptionWavPath, {
         mode: 'transcript',
       });
 

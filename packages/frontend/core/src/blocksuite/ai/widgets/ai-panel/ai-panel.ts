@@ -2,6 +2,7 @@ import {
   AFFINE_VIEWPORT_OVERLAY_WIDGET,
   type AffineViewportOverlayWidget,
 } from '@blocksuite/affine/blocks/root';
+import { ColorScheme } from '@blocksuite/affine/model';
 import {
   DocModeProvider,
   NotificationProvider,
@@ -9,6 +10,7 @@ import {
   ToolbarFlag,
   ToolbarRegistryIdentifier,
 } from '@blocksuite/affine/shared/services';
+import { unsafeCSSVar } from '@blocksuite/affine/shared/theme';
 import {
   getPageRootByElement,
   stopPropagation,
@@ -27,7 +29,8 @@ import {
   type Rect,
   shift,
 } from '@floating-ui/dom';
-import { css, html, nothing, type PropertyValues } from 'lit';
+import { darkCssVariables, lightCssVariables } from '@toeverything/theme';
+import { css, html, nothing, type PropertyValues, unsafeCSS } from 'lit';
 import { property, query } from 'lit/decorators.js';
 import { choose } from 'lit/directives/choose.js';
 import { literal, unsafeStatic } from 'lit/static-html.js';
@@ -43,9 +46,10 @@ export class AffineAIPanelWidget extends WidgetComponent {
       display: flex;
       outline: none;
       border-radius: var(--8, 8px);
-      border: 1px solid var(--affine-border-color);
-      background: var(--affine-background-overlay-panel-color);
-      box-shadow: var(--affine-overlay-shadow);
+      border: 1px solid;
+      border-color: ${unsafeCSSVar('--affine-border-color')};
+      background: ${unsafeCSSVar('backgroundOverlayPanelColor')};
+      box-shadow: ${unsafeCSSVar('overlayShadow')};
 
       position: absolute;
       width: max-content;
@@ -56,6 +60,21 @@ export class AffineAIPanelWidget extends WidgetComponent {
       scrollbar-width: none !important;
       z-index: var(--affine-z-index-popover);
       --affine-font-family: var(--affine-font-sans-family);
+    }
+
+    :host([data-app-theme='light']) {
+      background: ${unsafeCSS(
+        lightCssVariables['--affine-background-overlay-panel-color']
+      )};
+      border-color: ${unsafeCSS(lightCssVariables['--affine-border-color'])};
+      box-shadow: ${unsafeCSS(lightCssVariables['--affine-overlay-shadow'])};
+    }
+    :host([data-app-theme='dark']) {
+      background: ${unsafeCSS(
+        darkCssVariables['--affine-background-overlay-panel-color']
+      )};
+      border-color: ${unsafeCSS(darkCssVariables['--affine-border-color'])};
+      box-shadow: ${unsafeCSS(darkCssVariables['--affine-overlay-shadow'])};
     }
 
     .ai-panel-container {
@@ -414,6 +433,13 @@ export class AffineAIPanelWidget extends WidgetComponent {
 
   override connectedCallback() {
     super.connectedCallback();
+    this.appTheme = this.std.get(ThemeProvider).app$.value;
+    this.disposables.add(
+      this.std.get(ThemeProvider).app$.subscribe(theme => {
+        this.appTheme = theme;
+        this.requestUpdate();
+      })
+    );
 
     this.tabIndex = -1;
     // No need to synchronize the contents of the input into the editor.
@@ -460,7 +486,7 @@ export class AffineAIPanelWidget extends WidgetComponent {
     if (!this.config) return nothing;
     const config = this.config;
 
-    const theme = this.std.get(ThemeProvider).theme;
+    const theme = this.std.get(ThemeProvider).app$.value;
     const mainTemplate = choose(this.state, [
       [
         'input',
@@ -470,6 +496,7 @@ export class AffineAIPanelWidget extends WidgetComponent {
             .onFinish=${this._inputFinish}
             .onInput=${this.onInput}
             .networkSearchConfig=${config.networkSearchConfig}
+            .theme=${theme}
           ></ai-panel-input>`,
       ],
       [
@@ -564,6 +591,9 @@ export class AffineAIPanelWidget extends WidgetComponent {
 
   @property()
   accessor state: AffineAIPanelState = 'hidden';
+
+  @property({ attribute: 'data-app-theme', reflect: true })
+  accessor appTheme: ColorScheme = ColorScheme.Light;
 }
 
 export const aiPanelWidget = WidgetViewExtension(

@@ -1,5 +1,6 @@
 import { createLitPortal } from '@blocksuite/affine/components/portal';
 import { WithDisposable } from '@blocksuite/affine/global/lit';
+import { ColorScheme } from '@blocksuite/affine/model';
 import {
   EditorHost,
   PropTypes,
@@ -123,6 +124,7 @@ export class AIItemList extends WithDisposable(LitElement) {
           item => item.name,
           item =>
             html`<ai-item
+              .theme=${this.theme}
               .onClick=${this.onClick}
               .item=${item}
               .host=${this.host}
@@ -145,6 +147,9 @@ export class AIItemList extends WithDisposable(LitElement) {
 
   @property({ attribute: 'data-testid', reflect: true })
   accessor testId = 'ai-item-list';
+
+  @property({ attribute: false })
+  accessor theme: ColorScheme = ColorScheme.Light;
 }
 
 declare global {

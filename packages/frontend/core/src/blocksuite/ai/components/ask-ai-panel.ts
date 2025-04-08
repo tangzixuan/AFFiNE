@@ -1,5 +1,8 @@
 import { WithDisposable } from '@blocksuite/affine/global/lit';
-import { DocModeProvider } from '@blocksuite/affine/shared/services';
+import {
+  DocModeProvider,
+  ThemeProvider,
+} from '@blocksuite/affine/shared/services';
 import { scrollbarStyle } from '@blocksuite/affine/shared/styles';
 import { type EditorHost } from '@blocksuite/affine/std';
 import { cssVar } from '@toeverything/theme';
@@ -70,12 +73,23 @@ export class AskAIPanel extends WithDisposable(LitElement) {
     return filteredConfig;
   }
 
+  override connectedCallback() {
+    super.connectedCallback();
+    this.disposables.add(
+      this.host.std.get(ThemeProvider).app$.subscribe(() => {
+        this.requestUpdate();
+      })
+    );
+  }
+
   override render() {
     const style = styleMap({
       minWidth: `${this.minWidth}px`,
     });
+    const appTheme = this.host.std.get(ThemeProvider).app$.value;
     return html`<div class="ask-ai-panel" style=${style}>
       <ai-item-list
+        .theme=${appTheme}
         .host=${this.host}
         .groups=${this._actionGroups}
         .onClick=${this.onItemClick}

@@ -63,11 +63,6 @@ export declare class DocStoragePool {
   getBlobUploadedAt(universalId: string, peer: string, blobId: string): Promise<Date | null>
 }
 
-export declare class Mp3Encoder {
-  constructor(options: EncodeOptions)
-  encode(input: Float32Array): Uint8Array
-}
-
 export declare class RecordingPermissions {
   audio: boolean
   screen: boolean
@@ -135,42 +130,6 @@ export declare class TappableApplication {
   tapAudio(audioStreamCallback: ((err: Error | null, arg: Float32Array) => void)): AudioTapStream
 }
 
-/**Enumeration of valid values for `set_brate` */
-export declare enum Bitrate {
-  /**8_000 */
-  Kbps8 = 8,
-  /**16_000 */
-  Kbps16 = 16,
-  /**24_000 */
-  Kbps24 = 24,
-  /**32_000 */
-  Kbps32 = 32,
-  /**40_000 */
-  Kbps40 = 40,
-  /**48_000 */
-  Kbps48 = 48,
-  /**64_000 */
-  Kbps64 = 64,
-  /**80_000 */
-  Kbps80 = 80,
-  /**96_000 */
-  Kbps96 = 96,
-  /**112_000 */
-  Kbps112 = 112,
-  /**128_000 */
-  Kbps128 = 128,
-  /**160_000 */
-  Kbps160 = 160,
-  /**192_000 */
-  Kbps192 = 192,
-  /**224_000 */
-  Kbps224 = 224,
-  /**256_000 */
-  Kbps256 = 256,
-  /**320_000 */
-  Kbps320 = 320
-}
-
 export interface Blob {
   key: string
   data: Uint8Array
@@ -212,14 +171,6 @@ export interface DocUpdate {
   bin: Uint8Array
 }
 
-export interface EncodeOptions {
-  channels: number
-  quality?: Quality
-  bitrate?: Bitrate
-  sampleRate?: number
-  mode?: Mode
-}
-
 export interface InsertRow {
   docId?: string
   data: Uint8Array
@@ -233,42 +184,6 @@ export interface ListedBlob {
 }
 
 export declare function mintChallengeResponse(resource: string, bits?: number | undefined | null): Promise<string>
-
-/** MPEG mode */
-export declare enum Mode {
-  Mono = 0,
-  Stereo = 1,
-  JointStereo = 2,
-  DualChannel = 3,
-  NotSet = 4
-}
-
-/**
- *Possible quality parameter.
- *From best(0) to worst(9)
- */
-export declare enum Quality {
-  /**Best possible quality */
-  Best = 0,
-  /**Second best */
-  SecondBest = 1,
-  /**Close to best */
-  NearBest = 2,
-  /**Very nice */
-  VeryNice = 3,
-  /**Nice */
-  Nice = 4,
-  /**Good */
-  Good = 5,
-  /**Decent */
-  Decent = 6,
-  /**Okayish */
-  Ok = 7,
-  /**Almost worst */
-  SecondWorst = 8,
-  /**Worst */
-  Worst = 9
-}
 
 export interface SetBlob {
   key: string

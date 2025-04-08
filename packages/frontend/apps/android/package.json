@@ -1,11 +1,12 @@
 {
   "name": "@affine/android",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "AFFiNE Desktop Web application",
   "private": true,
   "scripts": {
     "build": "affine bundle",
-    "dev": "affine bundle --dev"
+    "dev": "affine bundle --dev",
+    "studio": "cap open android"
   },
   "dependencies": {
     "@affine/component": "workspace:*",

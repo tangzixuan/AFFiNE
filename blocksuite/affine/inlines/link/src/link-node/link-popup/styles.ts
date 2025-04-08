@@ -116,8 +116,7 @@ export const linkPopupStyle = css`
     }
   }
 
-  .overlay-mask,
-  .mock-selection-container {
+  .overlay-root {
     position: fixed;
     top: 0;
     left: 0;

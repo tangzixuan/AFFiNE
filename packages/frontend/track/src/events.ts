@@ -624,6 +624,7 @@ export type EventArgs = {
   modifyDocDefaultRole: { role: string };
   inviteUserDocRole: {
     control: 'member list';
+    role: string;
   };
   openInbox: { unreadCount: number };
   clickNotification: {

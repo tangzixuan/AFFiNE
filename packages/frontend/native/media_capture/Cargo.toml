@@ -7,7 +7,6 @@ version = "0.0.0"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mp3lame-encoder = { workspace = true, features = ["std"] }
 napi            = { workspace = true, features = ["napi4"] }
 napi-derive     = { workspace = true, features = ["type-def"] }
 rubato          = { workspace = true }

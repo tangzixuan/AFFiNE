@@ -1,9 +1,14 @@
 import { AIStarIcon } from '@blocksuite/affine/components/icons';
 import { SignalWatcher, WithDisposable } from '@blocksuite/affine/global/lit';
+import { ColorScheme } from '@blocksuite/affine/model';
 import { unsafeCSSVarV2 } from '@blocksuite/affine/shared/theme';
 import { stopPropagation } from '@blocksuite/affine/shared/utils';
 import { PublishIcon, SendIcon } from '@blocksuite/icons/lit';
-import { css, html, LitElement, nothing } from 'lit';
+import {
+  darkCssVariablesV2,
+  lightCssVariablesV2,
+} from '@toeverything/theme/v2';
+import { css, html, LitElement, nothing, unsafeCSS } from 'lit';
 import { property, query, state } from 'lit/decorators.js';
 
 import type { AINetworkSearchConfig } from '../../type';
@@ -20,7 +25,6 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      background: var(--affine-background-overlay-panel-color);
     }
 
     .star {
@@ -47,7 +51,7 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
         overflow: hidden;
         padding: 0px;
 
-        color: var(--affine-text-primary-color);
+        color: ${unsafeCSSVarV2('text/primary')};
 
         /* light/sm */
         font-family: var(--affine-font-family);
@@ -58,11 +62,11 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
       }
 
       textarea::placeholder {
-        color: var(--affine-placeholder-color);
+        color: ${unsafeCSSVarV2('text/placeholder')};
       }
 
       textarea::-moz-placeholder {
-        color: var(--affine-placeholder-color);
+        color: ${unsafeCSSVarV2('text/placeholder')};
       }
     }
 
@@ -79,12 +83,15 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
         color: ${unsafeCSSVarV2('button/pureWhiteText')};
       }
     }
+
     .arrow[data-active] {
       background: ${unsafeCSSVarV2('icon/activated')};
     }
+
     .arrow[data-active]:hover {
       cursor: pointer;
     }
+
     .network {
       display: flex;
       align-items: center;
@@ -97,8 +104,89 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
         color: ${unsafeCSSVarV2('icon/primary')};
       }
     }
+
     .network[data-active='true'] svg {
       color: ${unsafeCSSVarV2('icon/activated')};
+    }
+
+    :host([data-app-theme='light']) {
+      .network svg {
+        color: ${unsafeCSS(lightCssVariablesV2['--affine-v2-icon-primary'])};
+      }
+
+      .network[data-active='true'] svg {
+        color: ${unsafeCSS(lightCssVariablesV2['--affine-v2-icon-activated'])};
+      }
+
+      textarea {
+        color: ${unsafeCSS(lightCssVariablesV2['--affine-v2-text-primary'])};
+      }
+
+      textarea::placeholder {
+        color: ${unsafeCSS(
+          lightCssVariablesV2['--affine-v2-text-placeholder']
+        )};
+      }
+
+      textarea::-moz-placeholder {
+        color: ${unsafeCSS(
+          lightCssVariablesV2['--affine-v2-text-placeholder']
+        )};
+      }
+
+      .arrow {
+        background: ${unsafeCSS(
+          lightCssVariablesV2['--affine-v2-icon-disable']
+        )};
+      }
+
+      .arrow[data-active] {
+        background: ${unsafeCSS(
+          lightCssVariablesV2['--affine-v2-icon-activated']
+        )};
+      }
+
+      .arrow svg {
+        color: ${unsafeCSS(lightCssVariablesV2['--affine-v2-pure-white-text'])};
+      }
+    }
+
+    :host([data-app-theme='dark']) {
+      .network svg {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-icon-primary'])};
+      }
+
+      .network[data-active='true'] svg {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-icon-activated'])};
+      }
+
+      textarea {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-text-primary'])};
+      }
+
+      textarea::placeholder {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-text-placeholder'])};
+      }
+
+      textarea::-moz-placeholder {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-text-placeholder'])};
+      }
+
+      .arrow {
+        background: ${unsafeCSS(
+          darkCssVariablesV2['--affine-v2-icon-disable']
+        )};
+      }
+
+      .arrow[data-active] {
+        background: ${unsafeCSS(
+          darkCssVariablesV2['--affine-v2-icon-activated']
+        )};
+      }
+
+      .arrow svg {
+        color: ${unsafeCSS(darkCssVariablesV2['--affine-v2-pure-white-text'])};
+      }
     }
   `;
 
@@ -208,6 +296,9 @@ export class AIPanelInput extends SignalWatcher(WithDisposable(LitElement)) {
 
   @property({ attribute: false })
   accessor onInput: ((input: string) => void) | undefined = undefined;
+
+  @property({ attribute: 'data-app-theme', reflect: true })
+  accessor theme: ColorScheme = ColorScheme.Light;
 
   @query('textarea')
   accessor textarea!: HTMLTextAreaElement;

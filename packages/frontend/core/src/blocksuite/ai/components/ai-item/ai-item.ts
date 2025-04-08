@@ -1,5 +1,6 @@
 import { ArrowRightIcon, EnterIcon } from '@blocksuite/affine/components/icons';
 import { WithDisposable } from '@blocksuite/affine/global/lit';
+import { ColorScheme } from '@blocksuite/affine/model';
 import {
   EditorHost,
   PropTypes,
@@ -27,6 +28,7 @@ export class AIItem extends WithDisposable(LitElement) {
 
     return html`<div
       data-testid=${testId}
+      data-app-theme=${this.theme}
       class="menu-item ${className}"
       @pointerdown=${(e: MouseEvent) => e.stopPropagation()}
       @click=${() => {
@@ -59,6 +61,9 @@ export class AIItem extends WithDisposable(LitElement) {
 
   @property({ attribute: false })
   accessor onClick: (() => void) | undefined;
+
+  @property({ attribute: false })
+  accessor theme: ColorScheme = ColorScheme.Light;
 }
 
 declare global {

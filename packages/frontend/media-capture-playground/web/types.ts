@@ -54,7 +54,7 @@ export interface TranscriptionMetadata {
 }
 
 export interface SavedRecording {
-  mp3: string;
+  wav: string;
   metadata?: RecordingMetadata;
   transcription?: TranscriptionMetadata;
 }
