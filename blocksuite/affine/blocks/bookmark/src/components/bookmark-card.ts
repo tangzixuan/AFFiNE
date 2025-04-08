@@ -2,7 +2,7 @@ import { getEmbedCardIcons } from '@blocksuite/affine-block-embed';
 import { WebIcon16 } from '@blocksuite/affine-components/icons';
 import { ThemeProvider } from '@blocksuite/affine-shared/services';
 import { getHostName } from '@blocksuite/affine-shared/utils';
-import { WithDisposable } from '@blocksuite/global/lit';
+import { SignalWatcher, WithDisposable } from '@blocksuite/global/lit';
 import { OpenInNewIcon } from '@blocksuite/icons/lit';
 import { BlockSelection, ShadowlessElement } from '@blocksuite/std';
 import { html } from 'lit';
@@ -12,7 +12,9 @@ import { classMap } from 'lit/directives/class-map.js';
 import type { BookmarkBlockComponent } from '../bookmark-block.js';
 import { styles } from '../styles.js';
 
-export class BookmarkCard extends WithDisposable(ShadowlessElement) {
+export class BookmarkCard extends SignalWatcher(
+  WithDisposable(ShadowlessElement)
+) {
   static override styles = styles;
 
   private _handleClick(event: MouseEvent) {
@@ -125,11 +127,11 @@ export class BookmarkCard extends WithDisposable(ShadowlessElement) {
           <div class="affine-bookmark-content-description">
             ${descriptionText}
           </div>
-          <div
-            class="affine-bookmark-content-url-wrapper"
-            @click=${this.bookmark.open}
-          >
-            <div class="affine-bookmark-content-url">
+          <div class="affine-bookmark-content-url-wrapper">
+            <div
+              class="affine-bookmark-content-url"
+              @click=${this.bookmark.open}
+            >
               <span>${getHostName(url)}</span>
               <div class="affine-bookmark-content-url-icon">
                 ${OpenInNewIcon({ width: '12', height: '12' })}

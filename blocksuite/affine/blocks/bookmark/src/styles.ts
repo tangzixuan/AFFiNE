@@ -26,7 +26,6 @@ export const styles = css`
 
   .affine-bookmark-content {
     width: calc(100% - 204px);
-    height: 100%;
     display: flex;
     flex-direction: column;
     align-self: stretch;
