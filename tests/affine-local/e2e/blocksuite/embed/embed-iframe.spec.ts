@@ -19,7 +19,6 @@ const TEST_AFFINE_URL = 'https://affine.pro/';
 const EMBED_IFRAME_BLOCK = 'affine-embed-iframe-block';
 const EMBED_EDGELESS_IFRAME_BLOCK = 'affine-embed-edgeless-iframe-block';
 const IDLE_CARD = 'embed-iframe-idle-card';
-const LOADING_CARD = 'embed-iframe-loading-card';
 const LINK_INPUT_POPUP = 'embed-iframe-link-input-popup';
 
 test.beforeEach(async ({ page }) => {
@@ -106,8 +105,12 @@ test.describe('embed iframe block', () => {
   });
 
   test('add embed iframe url by clicking the idle card', async ({ page }) => {
-    const { embedIframeIdleCard, embedIframeLinkInputPopup, input } =
-      await addEmbedIframeBlock(page);
+    const {
+      embedIframeBlock,
+      embedIframeIdleCard,
+      embedIframeLinkInputPopup,
+      input,
+    } = await addEmbedIframeBlock(page);
     // click somewhere else to close the link input popup
     // click position below the popup
     const popupBoundingBox = await embedIframeLinkInputPopup.boundingBox();
@@ -128,9 +131,7 @@ test.describe('embed iframe block', () => {
 
     await expect(embedIframeLinkInputPopup).not.toBeVisible();
     await expect(embedIframeIdleCard).not.toBeVisible();
-
-    const embedIframeLoadingCard = page.locator(LOADING_CARD);
-    await expect(embedIframeLoadingCard).toBeVisible();
+    await expect(embedIframeBlock).toHaveCount(1);
   });
 
   test.describe('conversions', () => {
