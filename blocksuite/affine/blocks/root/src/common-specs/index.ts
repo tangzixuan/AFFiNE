@@ -42,6 +42,7 @@ import type { ExtensionType } from '@blocksuite/store';
 import { RootBlockAdapterExtensions } from '../adapters/extension';
 import { clipboardConfigs } from '../clipboard';
 import { builtinToolbarConfig } from '../configs/toolbar';
+import { fallbackKeymap } from '../keyboard/keymap';
 import {
   innerModalWidget,
   linkedDocWidget,
@@ -94,6 +95,7 @@ export const CommonSpecs: ExtensionType[] = [
   viewportOverlayWidget,
   scrollAnchoringWidget,
   toolbarWidget,
+  fallbackKeymap,
 
   ToolbarModuleExtension({
     id: BlockFlavourIdentifier(NoteBlockSchema.model.flavour),

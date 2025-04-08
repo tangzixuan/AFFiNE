@@ -1,3 +1,4 @@
+import { toolbarButtons } from '@affine-test/kit/bs/linked-toolbar';
 import { waitNextFrame } from '@affine-test/kit/bs/misc';
 import { test } from '@affine-test/kit/playwright';
 import { clickEdgelessModeButton } from '@affine-test/kit/utils/editor';
@@ -26,22 +27,6 @@ test.beforeEach(async ({ page }) => {
   await clickNewPageButton(page);
   await waitForEmptyEditor(page);
 });
-
-function toolbarButtons(page: Page) {
-  const toolbar = page.locator('affine-toolbar-widget editor-toolbar');
-  const switchViewBtn = toolbar.getByLabel('Switch view');
-  const inlineViewBtn = toolbar.getByLabel('Inline view');
-  const cardViewBtn = toolbar.getByLabel('Card view');
-  const embedViewBtn = toolbar.getByLabel('Embed view');
-
-  return {
-    toolbar,
-    switchViewBtn,
-    inlineViewBtn,
-    cardViewBtn,
-    embedViewBtn,
-  };
-}
 
 async function enableEmojiDocIcon(page: Page) {
   // Opens settings panel
