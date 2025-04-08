@@ -5,6 +5,7 @@ import {
   assertEdgelessTool,
   deleteAll,
   pickColorAtPoints,
+  rotateElementByHandle,
   selectBrushColor,
   selectBrushSize,
   setEdgelessTool,
@@ -194,4 +195,22 @@ test('change brush element size by component-toolbar', async ({ page }) => {
   await page.mouse.click(110, 110);
   await updateExistedBrushElementSize(page, 1);
   await assertEdgelessSelectedRect(page, [99, 99, 102, 102]);
+});
+
+test('rotate brush element and then change size', async ({ page }) => {
+  await enterPlaygroundRoom(page);
+  await initEmptyEdgelessState(page);
+  await switchEditorMode(page);
+  await zoomResetByKeyboard(page);
+
+  const start = { x: 100, y: 100 };
+  const end = { x: 200, y: 200 };
+  await addBasicBrushElement(page, start, end);
+
+  await page.mouse.click(110, 110);
+  await rotateElementByHandle(page, 45, 'bottom-right');
+
+  // change to line width 12
+  await updateExistedBrushElementSize(page, 6);
+  await assertEdgelessSelectedRect(page, [70.8, 70.8, 158.4, 158.4]);
 });
