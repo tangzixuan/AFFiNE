@@ -320,16 +320,12 @@ export class AIChatBlockPeekView extends LitElement {
    * Retry the last chat message
    */
   retry = async () => {
-    const { doc } = this.host;
-    const { _forkBlockId, _forkSessionId } = this;
-    if (!_forkBlockId || !_forkSessionId) {
-      return;
-    }
-
-    let content = '';
     try {
-      const abortController = new AbortController();
+      const { _forkBlockId, _forkSessionId } = this;
+      if (!_forkBlockId || !_forkSessionId) return;
+      if (!AIProvider.actions.chat) return;
 
+      const abortController = new AbortController();
       const messages = [...this.chatContext.messages];
       const last = messages[messages.length - 1];
       if ('content' in last) {
@@ -338,7 +334,8 @@ export class AIChatBlockPeekView extends LitElement {
       }
       this.updateContext({ messages, status: 'loading', error: null });
 
-      const stream = AIProvider.actions.chat?.({
+      const { doc } = this.host;
+      const stream = await AIProvider.actions.chat({
         sessionId: _forkSessionId,
         retry: true,
         docId: doc.id,
@@ -350,26 +347,21 @@ export class AIChatBlockPeekView extends LitElement {
         control: 'chat-send',
       });
 
-      if (stream) {
-        this.updateContext({ abortController });
-        for await (const text of stream) {
-          const messages = [...this.chatContext.messages];
-          const last = messages[messages.length - 1] as ChatMessage;
-          last.content += text;
-          this.updateContext({ messages, status: 'transmitting' });
-          content += text;
-        }
-
-        this.updateContext({ status: 'success' });
+      this.updateContext({ abortController });
+      for await (const text of stream) {
+        const messages = [...this.chatContext.messages];
+        const last = messages[messages.length - 1] as ChatMessage;
+        last.content += text;
+        this.updateContext({ messages, status: 'transmitting' });
       }
+
+      this.updateContext({ status: 'success' });
+      // Update new chat block messages if there are contents returned from AI
+      await this.updateChatBlockMessages();
     } catch (error) {
       this.updateContext({ status: 'error', error: error as AIError });
     } finally {
       this.updateContext({ abortController: null });
-      if (content) {
-        // Update new chat block messages if there are contents returned from AI
-        await this.updateChatBlockMessages();
-      }
     }
   };
 

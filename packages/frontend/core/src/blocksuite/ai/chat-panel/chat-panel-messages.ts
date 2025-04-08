@@ -348,10 +348,10 @@ export class ChatPanelMessages extends WithDisposable(ShadowlessElement) {
   }
 
   retry = async () => {
-    const { doc } = this.host;
     try {
       const sessionId = await this.createSessionId();
       if (!sessionId) return;
+      if (!AIProvider.actions.chat) return;
 
       const abortController = new AbortController();
       const messages = [...this.chatContextValue.messages];
@@ -362,7 +362,8 @@ export class ChatPanelMessages extends WithDisposable(ShadowlessElement) {
       }
       this.updateContext({ messages, status: 'loading', error: null });
 
-      const stream = AIProvider.actions.chat?.({
+      const { doc } = this.host;
+      const stream = await AIProvider.actions.chat({
         sessionId,
         retry: true,
         docId: doc.id,
@@ -374,18 +375,15 @@ export class ChatPanelMessages extends WithDisposable(ShadowlessElement) {
         control: 'chat-send',
         isRootSession: true,
       });
-
-      if (stream) {
-        this.updateContext({ abortController });
-        for await (const text of stream) {
-          const messages = [...this.chatContextValue.messages];
-          const last = messages[messages.length - 1] as ChatMessage;
-          last.content += text;
-          this.updateContext({ messages, status: 'transmitting' });
-        }
-
-        this.updateContext({ status: 'success' });
+      this.updateContext({ abortController });
+      for await (const text of stream) {
+        const messages = [...this.chatContextValue.messages];
+        const last = messages[messages.length - 1] as ChatMessage;
+        last.content += text;
+        this.updateContext({ messages, status: 'transmitting' });
       }
+
+      this.updateContext({ status: 'success' });
     } catch (error) {
       this.updateContext({ status: 'error', error: error as AIError });
     } finally {

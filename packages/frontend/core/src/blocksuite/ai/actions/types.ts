@@ -13,6 +13,8 @@ import type { EditorHost } from '@blocksuite/affine/std';
 import type { GfxModel } from '@blocksuite/affine/std/gfx';
 import type { BlockModel } from '@blocksuite/affine/store';
 
+import type { PromptKey } from '../provider/prompt';
+
 export const translateLangs = [
   'English',
   'Spanish',
@@ -131,6 +133,7 @@ declare global {
     interface ChatOptions extends AITextActionOptions {
       sessionId?: string;
       isRootSession?: boolean;
+      networkSearch?: boolean;
       contexts?: {
         docs: AIDocContextOption[];
         files: AIFileContextOption[];
@@ -155,107 +158,107 @@ declare global {
 
     interface AIActions {
       // chat is a bit special because it's has a internally maintained session
-      chat<T extends ChatOptions>(options: T): AIActionTextResponse<T>;
+      chat<T extends ChatOptions>(options: T): Promise<AIActionTextResponse<T>>;
 
       summary<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       improveWriting<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       improveGrammar<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       fixSpelling<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       createHeadings<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       makeLonger<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       makeShorter<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       continueWriting<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       checkCodeErrors<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       explainCode<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       writeArticle<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       writeTwitterPost<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       writePoem<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       writeBlogPost<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       brainstorm<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       writeOutline<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       explainImage<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       findActions<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       // mindmap
       brainstormMindmap<T extends BrainstormMindMap>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       expandMindmap<T extends ExpandMindMap>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       // presentation
       createSlides<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       // explain this
       explain<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       // actions with variants
       translate<T extends TranslateOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       changeTone<T extends ChangeToneOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
 
       // make it real, image to text
       makeItReal<T extends AIImageActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       createImage<T extends AIImageActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       processImage<T extends ProcessImageOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       filterImage<T extends FilterImageOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
       generateCaption<T extends AITextActionOptions>(
         options: T
-      ): AIActionTextResponse<T>;
+      ): Promise<AIActionTextResponse<T>>;
     }
 
     type AIDocsAndFilesContext = {
@@ -357,12 +360,16 @@ declare global {
       >[];
     };
 
+    interface CreateSessionOptions {
+      docId: string;
+      workspaceId: string;
+      promptName: PromptKey;
+      sessionId?: string;
+      retry?: boolean;
+    }
+
     interface AISessionService {
-      createSession: (
-        workspaceId: string,
-        docId: string,
-        promptName?: string
-      ) => Promise<string>;
+      createSession: (options: CreateSessionOptions) => Promise<string>;
       getSessions: (
         workspaceId: string,
         docId?: string,

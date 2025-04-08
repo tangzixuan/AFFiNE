@@ -3,16 +3,12 @@ import { partition } from 'lodash-es';
 import { AIProvider } from './ai-provider';
 import type { CopilotClient } from './copilot-client';
 import { delay, toTextStream } from './event-source';
-import type { PromptKey } from './prompt';
 
 const TIMEOUT = 50000;
 
 export type TextToTextOptions = {
   client: CopilotClient;
-  docId: string;
-  workspaceId: string;
-  promptName?: PromptKey;
-  sessionId?: string | Promise<string>;
+  sessionId: string;
   content?: string;
   attachments?: (string | Blob | File)[];
   params?: Record<string, any>;
@@ -61,30 +57,22 @@ async function resizeImage(blob: Blob | File): Promise<Blob | null> {
   return null;
 }
 
-async function createSessionMessage({
+interface CreateMessageOptions {
+  client: CopilotClient;
+  sessionId: string;
+  content?: string;
+  attachments?: (string | Blob | File)[];
+  params?: Record<string, any>;
+}
+
+async function createMessage({
   client,
-  docId,
-  workspaceId,
-  promptName = 'Chat With AFFiNE AI',
+  sessionId,
   content,
-  sessionId: providedSessionId,
   attachments,
   params,
-}: TextToTextOptions): Promise<{
-  sessionId: string;
-  messageId: string;
-}> {
-  if (!promptName && !providedSessionId) {
-    throw new Error('promptName or sessionId is required');
-  }
+}: CreateMessageOptions): Promise<string> {
   const hasAttachments = attachments && attachments.length > 0;
-  const sessionId = await (providedSessionId ??
-    client.createSession({
-      workspaceId,
-      docId,
-      promptName,
-    }));
-
   const options: Parameters<CopilotClient['createMessage']>[0] = {
     sessionId,
     content,
@@ -110,67 +98,44 @@ async function createSessionMessage({
     ).filter(Boolean) as File[];
   }
 
-  const messageId = await client.createMessage(options);
-  return {
-    messageId,
-    sessionId,
-  };
+  return await client.createMessage(options);
 }
 
 export function textToText({
   client,
-  docId,
-  workspaceId,
-  promptName,
+  sessionId,
   content,
   attachments,
   params,
-  sessionId,
   stream,
   signal,
   timeout = TIMEOUT,
   retry = false,
   workflow = false,
-  isRootSession = false,
   postfix,
 }: TextToTextOptions) {
-  let _sessionId: string;
-  let _messageId: string | undefined;
+  let messageId: string | undefined;
 
   if (stream) {
     return {
       [Symbol.asyncIterator]: async function* () {
-        if (retry) {
-          const retrySessionId =
-            (await sessionId) ?? AIProvider.LAST_ACTION_SESSIONID;
-          _sessionId = retrySessionId;
-          _messageId = undefined;
-        } else {
-          const message = await createSessionMessage({
+        if (!retry) {
+          messageId = await createMessage({
             client,
-            docId,
-            workspaceId,
-            promptName,
+            sessionId,
             content,
             attachments,
             params,
-            sessionId,
           });
-          _sessionId = message.sessionId;
-          _messageId = message.messageId;
         }
-
         const eventSource = client.chatTextStream(
           {
-            sessionId: _sessionId,
-            messageId: _messageId,
+            sessionId,
+            messageId,
           },
           workflow ? 'workflow' : undefined
         );
-        AIProvider.LAST_ACTION_SESSIONID = _sessionId;
-        if (isRootSession) {
-          AIProvider.LAST_ROOT_SESSION_ID = _sessionId;
-        }
+        AIProvider.LAST_ACTION_SESSIONID = sessionId;
 
         if (signal) {
           if (signal.aborted) {
@@ -212,34 +177,20 @@ export function textToText({
           })
         : null,
       (async function () {
-        if (retry) {
-          const retrySessionId =
-            (await sessionId) ?? AIProvider.LAST_ACTION_SESSIONID;
-          _sessionId = retrySessionId;
-          _messageId = undefined;
-        } else {
-          const message = await createSessionMessage({
+        if (!retry) {
+          messageId = await createMessage({
             client,
-            docId,
-            workspaceId,
-            promptName,
+            sessionId,
             content,
             attachments,
             params,
-            sessionId,
           });
-          _sessionId = message.sessionId;
-          _messageId = message.messageId;
         }
-
-        AIProvider.LAST_ACTION_SESSIONID = _sessionId;
-        if (isRootSession) {
-          AIProvider.LAST_ROOT_SESSION_ID = _sessionId;
-        }
+        AIProvider.LAST_ACTION_SESSIONID = sessionId;
 
         return client.chatText({
-          sessionId: _sessionId,
-          messageId: _messageId,
+          sessionId,
+          messageId,
         });
       })(),
     ]);
@@ -248,50 +199,36 @@ export function textToText({
 
 // Only one image is currently being processed
 export function toImage({
-  docId,
-  workspaceId,
-  promptName,
   content,
+  sessionId,
   attachments,
   params,
   seed,
-  sessionId,
   signal,
   timeout = TIMEOUT,
   retry = false,
   workflow = false,
   client,
 }: ToImageOptions) {
-  let _sessionId: string;
-  let _messageId: string | undefined;
+  let messageId: string | undefined;
   return {
     [Symbol.asyncIterator]: async function* () {
-      if (retry) {
-        const retrySessionId =
-          (await sessionId) ?? AIProvider.LAST_ACTION_SESSIONID;
-        _sessionId = retrySessionId;
-        _messageId = undefined;
-      } else {
-        const { messageId, sessionId } = await createSessionMessage({
-          docId,
-          workspaceId,
-          promptName,
+      if (!retry) {
+        messageId = await createMessage({
+          client,
+          sessionId,
           content,
           attachments,
           params,
-          client,
         });
-        _sessionId = sessionId;
-        _messageId = messageId;
       }
-
       const eventSource = client.imagesStream(
-        _sessionId,
-        _messageId,
+        sessionId,
+        messageId,
         seed,
         workflow ? 'workflow' : undefined
       );
-      AIProvider.LAST_ACTION_SESSIONID = _sessionId;
+      AIProvider.LAST_ACTION_SESSIONID = sessionId;
 
       for await (const event of toTextStream(eventSource, {
         timeout,

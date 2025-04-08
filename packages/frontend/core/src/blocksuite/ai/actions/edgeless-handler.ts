@@ -207,7 +207,7 @@ function actionToStream<T extends keyof BlockSuitePresets.AIActions>(
           }
 
           // @ts-expect-error TODO(@Peng): maybe fix this
-          stream = action(options);
+          stream = await action(options);
           if (!stream) return;
           yield* stream;
         },

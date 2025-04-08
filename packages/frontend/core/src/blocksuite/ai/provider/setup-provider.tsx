@@ -14,7 +14,7 @@ import type { PromptKey } from './prompt';
 import { textToText, toImage } from './request';
 import { setupTracker } from './tracker';
 
-const filterStyleToPromptName = new Map(
+const filterStyleToPromptName = new Map<string, PromptKey>(
   Object.entries({
     'Clay style': 'workflow:image-clay',
     'Pixel style': 'workflow:image-pixel',
@@ -23,7 +23,7 @@ const filterStyleToPromptName = new Map(
   })
 );
 
-const processTypeToPromptName = new Map(
+const processTypeToPromptName = new Map<string, PromptKey>(
   Object.entries({
     Clearer: 'debug:action:fal-upscaler',
     'Remove background': 'debug:action:fal-remove-bg',
@@ -35,31 +35,77 @@ export function setupAIProvider(
   client: CopilotClient,
   globalDialogService: GlobalDialogService
 ) {
+  async function createSession({
+    workspaceId,
+    docId,
+    promptName,
+    sessionId,
+    retry,
+  }: {
+    workspaceId: string;
+    docId: string;
+    promptName: PromptKey;
+    sessionId?: string;
+    retry?: boolean;
+  }) {
+    if (sessionId) return sessionId;
+    if (retry) return AIProvider.LAST_ACTION_SESSIONID;
+
+    return client.createSession({
+      workspaceId,
+      docId,
+      promptName,
+    });
+  }
+
   //#region actions
-  AIProvider.provide('chat', options => {
-    const { input, contexts, ...rest } = options;
+  AIProvider.provide('chat', async options => {
+    const { input, contexts, attachments, networkSearch, ...rest } = options;
+    const disableSearch =
+      !!contexts?.files.length ||
+      !!contexts?.docs.length ||
+      !!attachments?.length;
+    const promptName =
+      networkSearch && !disableSearch
+        ? 'Search With AFFiNE AI'
+        : 'Chat With AFFiNE AI';
+    const sessionId = await createSession({
+      promptName,
+      ...options,
+    });
+    await AIProvider.session?.updateSession(sessionId, promptName);
     return textToText({
-      ...rest,
       client,
+      sessionId,
       content: input,
+      attachments,
       params: contexts,
+      ...rest,
     });
   });
 
-  AIProvider.provide('summary', options => {
-    return textToText({
-      ...options,
-      client,
-      content: options.input,
+  AIProvider.provide('summary', async options => {
+    const sessionId = await createSession({
       promptName: 'Summary',
+      ...options,
     });
-  });
-
-  AIProvider.provide('translate', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
+      content: options.input,
+    });
+  });
+
+  AIProvider.provide('translate', async options => {
+    const sessionId = await createSession({
       promptName: 'Translate to',
+      ...options,
+    });
+    return textToText({
+      ...options,
+      client,
+      sessionId,
       content: options.input,
       params: {
         language: options.lang,
@@ -67,200 +113,280 @@ export function setupAIProvider(
     });
   });
 
-  AIProvider.provide('changeTone', options => {
+  AIProvider.provide('changeTone', async options => {
+    const sessionId = await createSession({
+      promptName: 'Change tone to',
+      ...options,
+    });
     return textToText({
       ...options,
       client,
+      sessionId,
       params: {
         tone: options.tone.toLowerCase(),
       },
       content: options.input,
-      promptName: 'Change tone to',
     });
   });
 
-  AIProvider.provide('improveWriting', options => {
-    return textToText({
-      ...options,
-      client,
-      content: options.input,
+  AIProvider.provide('improveWriting', async options => {
+    const sessionId = await createSession({
       promptName: 'Improve writing for it',
+      ...options,
     });
-  });
-
-  AIProvider.provide('improveGrammar', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('improveGrammar', async options => {
+    const sessionId = await createSession({
       promptName: 'Improve grammar for it',
+      ...options,
     });
-  });
-
-  AIProvider.provide('fixSpelling', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('fixSpelling', async options => {
+    const sessionId = await createSession({
       promptName: 'Fix spelling for it',
+      ...options,
     });
-  });
-
-  AIProvider.provide('createHeadings', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('createHeadings', async options => {
+    const sessionId = await createSession({
       promptName: 'Create headings',
+      ...options,
     });
-  });
-
-  AIProvider.provide('makeLonger', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('makeLonger', async options => {
+    const sessionId = await createSession({
       promptName: 'Make it longer',
+      ...options,
     });
-  });
-
-  AIProvider.provide('makeShorter', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('makeShorter', async options => {
+    const sessionId = await createSession({
       promptName: 'Make it shorter',
+      ...options,
     });
-  });
-
-  AIProvider.provide('checkCodeErrors', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('checkCodeErrors', async options => {
+    const sessionId = await createSession({
       promptName: 'Check code error',
+      ...options,
     });
-  });
-
-  AIProvider.provide('explainCode', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('explainCode', async options => {
+    const sessionId = await createSession({
       promptName: 'Explain this code',
+      ...options,
     });
-  });
-
-  AIProvider.provide('writeArticle', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('writeArticle', async options => {
+    const sessionId = await createSession({
       promptName: 'Write an article about this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('writeTwitterPost', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('writeTwitterPost', async options => {
+    const sessionId = await createSession({
       promptName: 'Write a twitter about this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('writePoem', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('writePoem', async options => {
+    const sessionId = await createSession({
       promptName: 'Write a poem about this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('writeOutline', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('writeOutline', async options => {
+    const sessionId = await createSession({
       promptName: 'Write outline',
+      ...options,
     });
-  });
-
-  AIProvider.provide('writeBlogPost', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('writeBlogPost', async options => {
+    const sessionId = await createSession({
       promptName: 'Write a blog post about this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('brainstorm', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('brainstorm', async options => {
+    const sessionId = await createSession({
       promptName: 'Brainstorm ideas about this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('findActions', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('findActions', async options => {
+    const sessionId = await createSession({
       promptName: 'Find action items from it',
+      ...options,
     });
-  });
-
-  AIProvider.provide('brainstormMindmap', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('brainstormMindmap', async options => {
+    const sessionId = await createSession({
       promptName: 'workflow:brainstorm',
+      ...options,
+    });
+    return textToText({
+      ...options,
+      client,
+      sessionId,
+      content: options.input,
       // 3 minutes
       timeout: 180000,
       workflow: true,
     });
   });
 
-  AIProvider.provide('expandMindmap', options => {
+  AIProvider.provide('expandMindmap', async options => {
     if (!options.input) {
       throw new Error('expandMindmap action requires input');
     }
+    const sessionId = await createSession({
+      promptName: 'Expand mind map',
+      ...options,
+    });
     return textToText({
       ...options,
       client,
+      sessionId,
       params: {
         mindmap: options.mindmap,
         node: options.input,
       },
       content: options.input,
-      promptName: 'Expand mind map',
     });
   });
 
-  AIProvider.provide('explain', options => {
-    return textToText({
-      ...options,
-      client,
-      content: options.input,
+  AIProvider.provide('explain', async options => {
+    const sessionId = await createSession({
       promptName: 'Explain this',
+      ...options,
     });
-  });
-
-  AIProvider.provide('explainImage', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
-      promptName: 'Explain this image',
     });
   });
 
-  AIProvider.provide('makeItReal', options => {
+  AIProvider.provide('explainImage', async options => {
+    const sessionId = await createSession({
+      promptName: 'Explain this image',
+      ...options,
+    });
+    return textToText({
+      ...options,
+      client,
+      sessionId,
+      content: options.input,
+    });
+  });
+
+  AIProvider.provide('makeItReal', async options => {
     let promptName: PromptKey = 'Make it real';
     let content = options.input || '';
 
@@ -275,15 +401,20 @@ Here are our design notes:\n ${content}.`;
 Could you make a new website based on these notes and send back just the html file?`;
     }
 
+    const sessionId = await createSession({
+      promptName,
+      ...options,
+    });
+
     return textToText({
       ...options,
       client,
+      sessionId,
       content,
-      promptName,
     });
   });
 
-  AIProvider.provide('createSlides', options => {
+  AIProvider.provide('createSlides', async options => {
     const SlideSchema = z.object({
       page: z.number(),
       type: z.enum(['name', 'title', 'content']),
@@ -320,11 +451,15 @@ Could you make a new website based on these notes and send back just the html fi
         })
         .join('\n');
     };
+    const sessionId = await createSession({
+      promptName: 'workflow:presentation',
+      ...options,
+    });
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
-      promptName: 'workflow:presentation',
       // 3 minutes
       timeout: 180000,
       workflow: true,
@@ -332,79 +467,98 @@ Could you make a new website based on these notes and send back just the html fi
     });
   });
 
-  AIProvider.provide('createImage', options => {
+  AIProvider.provide('createImage', async options => {
     // test to image
     let promptName: PromptKey = 'debug:action:dalle3';
     // image to image
     if (options.attachments?.length) {
       promptName = 'debug:action:fal-sd15';
     }
+
+    const sessionId = await createSession({
+      promptName,
+      ...options,
+    });
     return toImage({
       ...options,
       client,
+      sessionId,
       content: options.input,
-      promptName,
     });
   });
 
-  AIProvider.provide('filterImage', options => {
+  AIProvider.provide('filterImage', async options => {
     // test to image
-    const promptName = filterStyleToPromptName.get(options.style as string);
+    const promptName: PromptKey | undefined = filterStyleToPromptName.get(
+      options.style
+    );
+    if (!promptName) {
+      throw new Error('filterImage requires a promptName');
+    }
+    const sessionId = await createSession({
+      promptName,
+      ...options,
+    });
     return toImage({
       ...options,
       client,
+      sessionId,
       content: options.input,
       timeout: 180000,
-      promptName: promptName as PromptKey,
       workflow: !!promptName?.startsWith('workflow:'),
     });
   });
 
-  AIProvider.provide('processImage', options => {
+  AIProvider.provide('processImage', async options => {
     // test to image
-    const promptName = processTypeToPromptName.get(
-      options.type as string
-    ) as PromptKey;
+    const promptName: PromptKey | undefined = processTypeToPromptName.get(
+      options.type
+    );
+    if (!promptName) {
+      throw new Error('processImage requires a promptName');
+    }
+    const sessionId = await createSession({
+      promptName,
+      ...options,
+    });
     return toImage({
       ...options,
       client,
+      sessionId,
       content: options.input,
       timeout: 180000,
-      promptName,
     });
   });
 
-  AIProvider.provide('generateCaption', options => {
-    return textToText({
-      ...options,
-      client,
-      content: options.input,
+  AIProvider.provide('generateCaption', async options => {
+    const sessionId = await createSession({
       promptName: 'Generate a caption',
+      ...options,
     });
-  });
-
-  AIProvider.provide('continueWriting', options => {
     return textToText({
       ...options,
       client,
+      sessionId,
       content: options.input,
+    });
+  });
+
+  AIProvider.provide('continueWriting', async options => {
+    const sessionId = await createSession({
       promptName: 'Continue writing',
+      ...options,
+    });
+    return textToText({
+      ...options,
+      client,
+      sessionId,
+      content: options.input,
     });
   });
   //#endregion
 
   AIProvider.provide('session', {
-    createSession: async (
-      workspaceId: string,
-      docId: string,
-      promptName = 'Chat With AFFiNE AI'
-    ) => {
-      return client.createSession({
-        workspaceId,
-        docId,
-        promptName,
-      });
-    },
+    createSession,
     getSessions: async (
       workspaceId: string,
       docId?: string,

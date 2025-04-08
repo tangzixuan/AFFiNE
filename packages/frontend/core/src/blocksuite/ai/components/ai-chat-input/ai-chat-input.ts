@@ -25,7 +25,6 @@ import type {
 } from '../ai-chat-chips/type';
 import { isDocChip, isFileChip } from '../ai-chat-chips/utils';
 import type { ChatMessage } from '../ai-chat-messages';
-import { PROMPT_NAME_AFFINE_AI, PROMPT_NAME_NETWORK_SEARCH } from './const';
 import type { AIChatInputContext, AINetworkSearchConfig } from './type';
 
 const MaximumImageCount = 32;
@@ -255,7 +254,8 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
   private get _isNetworkActive() {
     return (
       !!this.networkSearchConfig.visible.value &&
-      !!this.networkSearchConfig.enabled.value
+      !!this.networkSearchConfig.enabled.value &&
+      !this._isNetworkDisabled
     );
   }
 
@@ -272,22 +272,6 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
       this.chatContextValue.status === 'transmitting' ||
       !this.chatContextValue.messages.length
     );
-  }
-
-  private _getPromptName() {
-    if (this._isNetworkDisabled) {
-      return PROMPT_NAME_AFFINE_AI;
-    }
-    return this._isNetworkActive
-      ? PROMPT_NAME_NETWORK_SEARCH
-      : PROMPT_NAME_AFFINE_AI;
-  }
-
-  private async _updatePromptName(promptName: string) {
-    const sessionId = await this.createSessionId();
-    if (sessionId && AIProvider.session) {
-      await AIProvider.session.updateSession(sessionId, promptName);
-    }
   }
 
   override connectedCallback() {
@@ -313,7 +297,7 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
     const { images, status } = this.chatContextValue;
     const hasImages = images.length > 0;
     const maxHeight = hasImages ? 272 + 2 : 200 + 2;
-    const uploadDisabled = this._isNetworkActive && !this._isNetworkDisabled;
+    const uploadDisabled = this._isNetworkActive;
     return html` <div
       class="chat-panel-input"
       data-if-focused=${this.focused}
@@ -380,9 +364,7 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
                 data-testid="chat-network-search"
                 aria-disabled=${this._isNetworkDisabled}
                 data-active=${this._isNetworkActive}
-                @click=${this._isNetworkDisabled
-                  ? undefined
-                  : this._toggleNetworkSearch}
+                @click=${this._toggleNetworkSearch}
                 @pointerdown=${stopPropagation}
               >
                 ${PublishIcon()}
@@ -473,6 +455,9 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (this._isNetworkDisabled) {
+      return;
+    }
     const enable = this.networkSearchConfig.enabled.value;
     this.networkSearchConfig.setEnabled(!enable);
   };
@@ -514,13 +499,12 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
   };
 
   send = async (text: string) => {
-    const { status, markdown, images } = this.chatContextValue;
-    if (status === 'loading' || status === 'transmitting') return;
-    if (!text) return;
-    if (!AIProvider.actions.chat) return;
-
     try {
-      const promptName = this._getPromptName();
+      const { status, markdown, images } = this.chatContextValue;
+      if (status === 'loading' || status === 'transmitting') return;
+      if (!text) return;
+      if (!AIProvider.actions.chat) return;
+
       const abortController = new AbortController();
       this.updateContext({
         images: [],
@@ -538,16 +522,13 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
 
       // optimistic update messages
       await this._preUpdateMessages(userInput, attachments);
-      // must update prompt name after local chat message is updated
-      // otherwise, the unauthorized error can not be rendered properly
-      await this._updatePromptName(promptName);
 
       const sessionId = await this.createSessionId();
       const contexts = await this._getMatchedContexts(userInput);
       if (abortController.signal.aborted) {
         return;
       }
-      const stream = AIProvider.actions.chat({
+      const stream = await AIProvider.actions.chat({
         sessionId,
         input: userInput,
         contexts,
@@ -560,6 +541,7 @@ export class AIChatInput extends SignalWatcher(WithDisposable(LitElement)) {
         isRootSession: this.isRootSession,
         where: this.trackOptions.where,
         control: this.trackOptions.control,
+        networkSearch: this._isNetworkActive,
       });
 
       for await (const text of stream) {

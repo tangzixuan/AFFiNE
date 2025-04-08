@@ -141,7 +141,6 @@ export class ChatPanel extends SignalWatcher(
     const history = histories?.find(history => history.sessionId === sessionId);
     if (history) {
       messages.push(...history.messages);
-      AIProvider.LAST_ROOT_SESSION_ID = history.sessionId;
     }
 
     this.chatContextValue = {
@@ -182,10 +181,11 @@ export class ChatPanel extends SignalWatcher(
     if (this._sessionId) {
       return this._sessionId;
     }
-    this._sessionId = await AIProvider.session?.createSession(
-      this.doc.workspace.id,
-      this.doc.id
-    );
+    this._sessionId = await AIProvider.session?.createSession({
+      docId: this.doc.id,
+      workspaceId: this.doc.workspace.id,
+      promptName: 'Chat With AFFiNE AI',
+    });
     return this._sessionId;
   };
 
