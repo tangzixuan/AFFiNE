@@ -27,6 +27,7 @@ export const styles = css`
     padding: 12px;
     border-radius: var(--1, 0px);
     opacity: var(--add, 1);
+    max-width: 100%;
   }
 
   .affine-embed-linked-doc-content-title {
