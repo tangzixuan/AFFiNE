@@ -7,7 +7,10 @@ import {
 import * as Y from 'yjs';
 
 import { SurfaceBlockModel as BaseSurfaceModel } from '../gfx/index.js';
-import { GfxCompatibleBlockModel } from '../gfx/model/gfx-block-model.js';
+import {
+  GfxCompatibleBlockModel,
+  type GfxCompatibleProps,
+} from '../gfx/model/gfx-block-model.js';
 import { TestShapeElement } from './test-gfx-element.js';
 
 export const RootBlockSchema = defineBlockSchema({
@@ -97,7 +100,7 @@ type GfxTestBlockProps = {
   xywh: SerializedXYWH;
   rotate: number;
   index: string;
-};
+} & GfxCompatibleProps;
 
 export const TestGfxBlockSchema = defineBlockSchema({
   flavour: 'test:gfx-block',
@@ -106,6 +109,7 @@ export const TestGfxBlockSchema = defineBlockSchema({
       xywh: '[0,0,10,10]' as SerializedXYWH,
       rotate: 0,
       index: 'a0',
+      lockedBySelf: false,
     }) as GfxTestBlockProps,
   metadata: {
     version: 1,
