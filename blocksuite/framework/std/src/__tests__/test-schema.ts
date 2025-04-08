@@ -1,3 +1,4 @@
+import type { SerializedXYWH } from '@blocksuite/global/gfx';
 import {
   BlockModel,
   BlockSchemaExtension,
@@ -6,6 +7,7 @@ import {
 import * as Y from 'yjs';
 
 import { SurfaceBlockModel as BaseSurfaceModel } from '../gfx/index.js';
+import { GfxCompatibleBlockModel } from '../gfx/model/gfx-block-model.js';
 import { TestShapeElement } from './test-gfx-element.js';
 
 export const RootBlockSchema = defineBlockSchema({
@@ -73,7 +75,7 @@ export const SurfaceBlockSchema = defineBlockSchema({
   }),
   metadata: {
     version: 1,
-    role: 'surface',
+    role: 'hub',
     parent: ['test:page'],
   },
   toModel: () => new SurfaceBlockModel(),
@@ -90,3 +92,32 @@ export class SurfaceBlockModel extends BaseSurfaceModel {
     super._init();
   }
 }
+
+type GfxTestBlockProps = {
+  xywh: SerializedXYWH;
+  rotate: number;
+  index: string;
+};
+
+export const TestGfxBlockSchema = defineBlockSchema({
+  flavour: 'test:gfx-block',
+  props: () =>
+    ({
+      xywh: '[0,0,10,10]' as SerializedXYWH,
+      rotate: 0,
+      index: 'a0',
+    }) as GfxTestBlockProps,
+  metadata: {
+    version: 1,
+    role: 'content',
+    parent: ['test:surface'],
+  },
+  toModel: () => new TestGfxBlockModel(),
+});
+
+export const TestGfxBlockSchemaExtension =
+  BlockSchemaExtension(TestGfxBlockSchema);
+
+export class TestGfxBlockModel extends GfxCompatibleBlockModel<GfxTestBlockProps>(
+  BlockModel
+) {}

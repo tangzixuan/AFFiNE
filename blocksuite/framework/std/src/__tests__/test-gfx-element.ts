@@ -4,6 +4,7 @@ import {
   convert,
   derive,
   field,
+  GfxLocalElementModel,
   GfxPrimitiveElementModel,
 } from '../gfx/index.js';
 
@@ -19,7 +20,6 @@ export class TestShapeElement extends GfxPrimitiveElementModel {
   accessor xywh: SerializedXYWH = '[0,0,10,10]';
 
   @convert(val => {
-    console.log(val);
     if (['rect', 'triangle'].includes(val)) {
       return val;
     }
@@ -37,4 +37,8 @@ export class TestShapeElement extends GfxPrimitiveElementModel {
   })
   @field()
   accessor shapeType: 'rect' | 'triangle' = 'rect';
+}
+
+export class TestLocalElement extends GfxLocalElementModel {
+  override type: string = 'testLocal';
 }
